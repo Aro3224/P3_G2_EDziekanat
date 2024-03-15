@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { render } from "react-dom";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ref, set, onValue, Database, DataSnapshot } from "firebase/database";
+import { ref, set, onValue, Database, DataSnapshot, push, update } from "firebase/database";
 import { db } from './components/config';
 import { getMessaging, getToken } from "firebase/messaging";
-import {PermissionsAndroid} from 'react-native';
-import { initializeApp } from "firebase/app";
 
 interface AppProps { }
 
@@ -34,29 +32,9 @@ export default function App({ }: AppProps) {
     const starCountRef = ref(db, 'token/');
     onValue(starCountRef, (snapshot: DataSnapshot) => {
       const data = snapshot.val();
-      setReceivedText(data?.Token || '');
+      setReceivedText(data?.WebToken || '');
       alert("Token: " + receivedText);
     });
-
-    /*
-    try {
-      // Wysłanie powiadomienia za pomocą Firebase Cloud Messaging
-      messaging.Message({
-        to: receivedText,
-        notification: {
-          title: "E-dziekanat",
-          body: "Masz nowe powiadomienie!",
-        },
-        topic: 'wiadomosc', // Możesz użyć tematu, aby kierować powiadomienia do konkretnych urządzeń
-        token: receivedText
-      });
-      // Informacja o poprawnym zapisie i wysłaniu powiadomienia
-      alert('Wiadomość wysłana');
-    } catch (error) {
-      // Obsługa błędów
-     alert('Wystąpił błąd: ' + error);
-    }
-    */
   }
 
   //WEB TOKEN AND NOTIFICATION PERMISSION
@@ -71,8 +49,8 @@ export default function App({ }: AppProps) {
         if (currentToken) {
           // Send the token to your server and update the UI if necessary
           // ...
-          set(ref(db, 'token/'), {
-            Token: currentToken
+          update(ref(db, 'token/'), {
+            WebToken: currentToken
           })
         } else {
           // Show permission request UI
