@@ -1,29 +1,11 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, useColorScheme, View, Alert, TouchableOpacity } from 'react-native';
+import { Colors, Header } from 'react-native/Libraries/NewAppScreen';
+import { requestUserPermission } from './app/shared/components/PushNotifications';
+import {PermissionsAndroid} from 'react-native';
+import messaging from '@react-native-firebase/messaging';
+import database from '@react-native-firebase/database';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -57,10 +39,27 @@ function Section({children, title}: SectionProps): React.JSX.Element {
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+  useEffect(()=>{
+    requestUserPermission()
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      Alert.alert('Masz nowe powiadomienie!', JSON.stringify(remoteMessage));
+    });
+    return unsubscribe
+  },[])
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
+
+  const handleButtonPress = () => {
+    database().ref('wiadomosc/testWiadomosc').once('value')
+  .then(snapshot => {
+    const valAsString = JSON.stringify(snapshot.val());
+    Alert.alert(valAsString);
+  });
+  };
+
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -76,20 +75,9 @@ function App(): React.JSX.Element {
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+          <TouchableOpacity onPress={handleButtonPress} style={styles.button}>
+            <Text style={styles.buttonText}>Odczytaj wiadomość</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -112,6 +100,18 @@ const styles = StyleSheet.create({
   },
   highlight: {
     fontWeight: '700',
+  },
+  button: {
+    backgroundColor: 'blue',
+    padding: 10,
+    borderRadius: 5,
+    margin: 20,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
