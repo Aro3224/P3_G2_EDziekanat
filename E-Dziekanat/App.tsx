@@ -5,12 +5,21 @@ import messaging from '@react-native-firebase/messaging';
 import Notif_Mobile from './components/Notif_Mobile';
 import TokenGetter from './components/TokenWeb';
 
+//screens
+import Login from './screens/Login';
+
 export default function App() {
 
-  return (
+  /*return (
     <View style={styles.container}>
       {Platform.OS =="web"?<TokenGetter/>:<Notif_Mobile/>}
       <StatusBar style="auto" />
+    </View>
+  );*/
+  
+  return (
+    <View style={styles.container}>
+      <Login />
     </View>
   );
 }
