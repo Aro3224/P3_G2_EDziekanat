@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyledContainer, InnerContainer, PageLogo, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, StyledTextInput, RightIcon, StyledButton, ButtonText, Colors, MsgBox } from '../components/styles';
+import { StyledContainer, InnerContainer, PageLogo, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, StyledTextInput, RightIcon, StyledButton, ButtonText, Colors, MsgBox } from '../styles';
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import { Formik } from 'formik';

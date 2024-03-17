@@ -6,7 +6,7 @@ import Notif_Mobile from './components/Notif_Mobile';
 import TokenGetter from './components/TokenWeb';
 
 //screens
-import Login from './screens/Login';
+import Login from './components/screens/Login';
 
 export default function App() {
 
