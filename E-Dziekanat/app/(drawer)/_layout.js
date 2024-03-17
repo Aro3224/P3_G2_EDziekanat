@@ -30,6 +30,13 @@ export default function Layout() {
             drawerIcon: ({size, color}) => <Ionicons name="settings"  size={size} color={color}/>
         }}>
         </Drawer.Screen>
+
+        <Drawer.Screen name='filldata'
+        options={{
+            drawerLabel: "Uzupełnij dane",
+            title: "Uzupełnij dane",
+            drawerIcon: ({size, color}) => <Ionicons name="pencil-outline"  size={size} color={color}/>
+        }}></Drawer.Screen>
       </Drawer>
     </GestureHandlerRootView>
   );
