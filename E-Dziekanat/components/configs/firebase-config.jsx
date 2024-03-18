@@ -4,6 +4,8 @@ import { getAnalytics } from "firebase/analytics";
 import { getDatabase } from "firebase/database";
 import { getMessaging, getToken } from "firebase/messaging";
 import { Platform } from "react-native";
+import { getAuth } from "firebase/auth";
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -32,3 +34,6 @@ if(Platform.OS == 'web'){
 const messaging = getMessaging(app);
 getToken(messaging, {vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk"});
 }
+// Initialize Firebase Authentication and get a reference to the service
+const auth = getAuth(app);
+

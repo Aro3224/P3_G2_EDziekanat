@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 
 export default function Layout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+
       <Drawer  screenOptions={{headerShown:false, swipeEdgeWidth:0 }}>
         <Drawer.Screen name='home'
         options={{
@@ -37,7 +37,14 @@ export default function Layout() {
             title: "Uzupełnij dane",
             drawerIcon: ({size, color}) => <Ionicons name="pencil-outline"  size={size} color={color}/>
         }}></Drawer.Screen>
+
+        <Drawer.Screen name='users'
+          options={{
+            drawerLabel: "Użytkownicy",
+            title: "Użytkownicy",
+            drawerIcon: ({size, color}) => <Ionicons name="people-outline"  size={size} color={color}/>
+          }}>
+        </Drawer.Screen>
       </Drawer>
-    </GestureHandlerRootView>
   );
 }
