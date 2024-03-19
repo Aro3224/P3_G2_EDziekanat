@@ -116,13 +116,15 @@ input: {
   marginBottom: 20,
 },
 button: {
-  backgroundColor: 'blue',
-  padding: 10,
+  backgroundColor: "#007bff", 
+  paddingVertical: 10,
+  paddingHorizontal: 20,
   borderRadius: 5,
-  marginBottom: 10,
+  marginVertical: 10,
 },
 buttonText: {
-  color: '#fff',
-  textAlign: 'center',
+  color: "#fff", 
+  fontSize: 16,
+  fontWeight: "bold",
 },
 })

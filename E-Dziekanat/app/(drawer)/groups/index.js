@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, Pressable, } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
@@ -17,11 +17,10 @@ export default function GroupPage() {
         headerShown: true, 
         headerLeft: ()=> <DrawerToggleButton/>}} />
       <Text style={styles.subtitle}>Grupy</Text>
-      <TouchableOpacity style={styles.button} onPress={navigateToCreateGroup}>
-            <Text style={styles.buttonText}>Stwórz grupę</Text>
-          </TouchableOpacity>
-          <Link href={"/(drawer)/groups/creategroup"}>
-        <Text>Przejdź do podstrony</Text>
+          <Link href="/(drawer)/groups/creategroup" asChild style={styles.button}>
+          <Pressable>
+            <Text style={styles.buttonText}>Utwórz grupę</Text>
+          </Pressable>
       </Link>
     </View>);
 }
@@ -39,15 +38,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   button: {
-    backgroundColor: 'blue',
-    padding: 10,
+    backgroundColor: "#007bff", 
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    marginBottom: 10,
-    width: '30%'
+    marginVertical: 10,
+    width: '20%'
   },
   buttonText: {
-    color: '#fff',
-    textAlign: 'center',
+    color: "#fff", 
     fontSize: 20,
+    fontWeight: "bold",
+    textAlign: 'center'
   },
 })

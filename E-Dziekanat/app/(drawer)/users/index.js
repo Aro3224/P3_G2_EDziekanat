@@ -92,6 +92,9 @@ export default function UsersPage() {
           <TouchableOpacity onPress={() => handleDeleteUser(item.id)}>
               <Text style={styles.deleteButton}>Usuń</Text>
             </TouchableOpacity>
+            <Link href={`/(drawer)/users/edit_user?id=${item.id}`}>
+              <Text style={styles.editButton}>Edytuj</Text>
+            </Link>
         </View>
       )}
       keyExtractor={item => item.id}
@@ -133,5 +136,8 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     color: 'red',
-  }
+  },
+  editButton: {
+    color: 'blue',
+  },
 })

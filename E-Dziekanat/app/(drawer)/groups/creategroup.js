@@ -17,7 +17,7 @@ export default function NextPage() {
 
   const ReadData = async () => {
     try {
-      const snapshot = await get(child(ref(db), 'Users'));
+      const snapshot = await get(child(ref(db), 'users'));
       if (snapshot.exists()) {
         setUserData(snapshot.val());
       } else {
@@ -44,7 +44,7 @@ export default function NextPage() {
     }
     Object.entries(checkedUsers).forEach(([userId, isChecked]) => {
       if (isChecked) {
-        update(ref(db, `Users/${userId}`), {
+        update(ref(db, `users/${userId}`), {
           Grupa: textGroupNameValue
         }).then(() => {
           console.log(`Group Saved for User: ${userId}`);
@@ -155,17 +155,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    width: '10%',
-    backgroundColor: 'blue',
-    padding: 10,
+    backgroundColor: "#007bff", 
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    marginTop: 15,
+    marginVertical: 10,
   },
   buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 15
-  },
+    color: "#fff", 
+    fontSize: 16,
+    fontWeight: "bold",
+},
   errorMessage: {
     color: 'red',
     marginTop: 10,
