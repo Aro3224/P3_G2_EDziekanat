@@ -3,8 +3,11 @@ import { Text, View, StyleSheet, Button,SafeAreaView, TextInput, Alert } from 'r
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
-import auth from '@react-native-firebase/auth';
-import database from '@react-native-firebase/database'; 
+import { db, auth } from '../../../components/configs/firebase-config';
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getDatabase, ref, set } from "firebase/database";
+
+
 
 export default function AddUserPage() {
   const [userEmail, onChangeEmail] = useState('');
@@ -34,16 +37,17 @@ export default function AddUserPage() {
       setPassError('Hasło musi składać się z co najmniej 6 znaków.');
       return;
     }
+    const auth = getAuth();
 
-    auth()
-    .createUserWithEmailAndPassword(userEmail, userPass)
-    .then((userCredential) => {
+    createUserWithEmailAndPassword(auth, userEmail, userPass)
+  .then((userCredential) => {
+
 
       const uid = userCredential.user.uid;
       console.log('User account created & signed in!');
-      database()
-      .ref(`/users/${uid}`)
-      .set({ email: userEmail })
+      
+      set(ref(db, `/users/${uid}`),
+      { email: userEmail })
       .then(() => {
         console.log('UID użytkownika zostało dodane do bazy danych.');
       onChangeEmail("");

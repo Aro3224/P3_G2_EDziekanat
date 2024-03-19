@@ -1,6 +1,5 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getDatabase } from "firebase/database";
 import { getMessaging, getToken } from "firebase/messaging";
 import { Platform } from "react-native";
@@ -27,7 +26,7 @@ const app = initializeApp(firebaseConfig);
 //const analytics = analytics.isSupported(getAnalytics(app));
 
 // Initialize database
-export const db = getDatabase(app);
+const db = getDatabase(app);
 
 // Initialize Firebase Cloud Messaging and get a reference to the service
 if(Platform.OS == 'web'){
@@ -37,3 +36,4 @@ getToken(messaging, {vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksIC
 // Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);
 
+export { db, auth};
