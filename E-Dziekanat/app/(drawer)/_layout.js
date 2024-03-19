@@ -45,6 +45,13 @@ export default function Layout() {
             drawerIcon: ({size, color}) => <Ionicons name="people-outline"  size={size} color={color}/>
           }}>
         </Drawer.Screen>
+
+        <Drawer.Screen name='groups'
+        options={{
+            drawerLabel: "Grupy",
+            title: "Grupy",
+            drawerIcon: ({size, color}) => <Ionicons name="people-circle-outline"  size={size} color={color}/>
+        }}></Drawer.Screen>
       </Drawer>
   );
 }
