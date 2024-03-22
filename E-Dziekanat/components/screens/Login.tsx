@@ -15,7 +15,7 @@ const Login: React.FC = () => {
         <StyledContainer>
             <StatusBar style="dark" />
             <InnerContainer>
-                <PageLogo resizeMode="cover" source={require('../assets/icon.png')} />
+                {/*<PageLogo resizeMode="cover" source={require('../assets/icon')} />*/}
                 <PageTitle>E-Dziekanat</PageTitle>
                 <SubTitle>Logowanie</SubTitle>
 
@@ -51,7 +51,7 @@ const Login: React.FC = () => {
                                 hidePassword={hidePassword}
                                 setHidePassword={setHidePassword}
                             />
-                            <MsgBox>...</MsgBox>
+                            <MsgBox></MsgBox>
                             <StyledButton onPress={handleSubmit}>
                                 <ButtonText>Login</ButtonText>
                             </StyledButton>
