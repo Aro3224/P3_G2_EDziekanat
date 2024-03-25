@@ -42,18 +42,20 @@ export default function NextPage() {
     } else {
       setErrorMessage("");
     }
-    Object.entries(checkedUsers).forEach(([userId, isChecked]) => {
-      if (isChecked) {
-        update(ref(db, `users/${userId}`), {
-          Grupa: textGroupNameValue
-        }).then(() => {
-          console.log(`Group Saved for User: ${userId}`);
-        }).catch((error) => {
-          console.error(`Error updating group for User: ${userId}`, error);
-        });
-      }
-    });
-    alert("Grupa została utworzona");
+    const UsersIds = Object.entries(checkedUsers)
+      .filter(([isChecked]) => isChecked)
+      .map(([userId]) => userId);
+    const groupData = {
+      Users: UsersIds
+    };
+    update(ref(db, `groups/${textGroupNameValue}`), groupData)
+      .then(() => {
+        alert("Grupa została utworzona");
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+        alert("Wystąpił błąd podczas tworzenia grupy. Spróbuj ponownie później.");
+      });
   };
   
   const handleUserCheckbox = (userId) => {
