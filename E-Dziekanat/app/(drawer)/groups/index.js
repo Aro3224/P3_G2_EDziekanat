@@ -1,28 +1,112 @@
-import { Text, View, StyleSheet, Pressable, } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform, Alert } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
-import { Link } from 'expo-router';
-import { useNavigation } from '@react-navigation/native';
-
+import { Link, Redirect } from 'expo-router';
+import { db } from '../../../components/configs/firebase-config';
+import { ref, onValue, remove } from "firebase/database";
 
 export default function GroupPage() {
-  const navigateToCreateGroup = () => {
-    navigation.navigate('(drawer)/groups/creategroup');
-  };
+  const [groups, setGroups] = useState([]);
+
+  useEffect(() => {
+    const groupsRef = ref(db, '/groups');
+    onValue(groupsRef, (snapshot) => {
+      const groupsData = snapshot.val();
+      if (groupsData) {
+        const groupsArray = Object.keys(groupsData).map(key => ({
+          id: key,
+          users: groupsData[key].Users || []
+        }));
+        setGroups(groupsArray);
+      }
+    });
+
+  }, []);
+
+  const handleDeleteGroup = (groupId) => {
+  Alert.alert(
+    'Potwierdzenie',
+    'Czy na pewno chcesz usunąć tę grupę?',
+    [
+      { text: 'Anuluj', style: 'cancel' },
+      {
+        text: 'Usuń',
+        onPress: async () => {
+          try {
+            await remove(ref(db, `/groups/${groupId}`));
+            console.log('Grupa została usunięta z bazy danych.');
+            setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+          } catch (error) {
+            console.error('Błąd podczas usuwania grupy:', error);
+            Alert.alert('Błąd', 'Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
+          }
+        },
+      },
+    ],
+    { cancelable: false }
+  );
+};
+
+const handleDeleteGroupWeb = (groupId) => {
+  const confirmation = window.confirm('Czy na pewno chcesz usunąć tę grupę?');
+  
+  if (confirmation) {
+    try {
+      remove(ref(db, `/groups/${groupId}`))
+        .then(() => {
+          console.log('Grupa została usunięty z bazy danych.');
+          setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+        })
+        .catch((error) => {
+          console.error('Błąd podczas usuwania grupy:', error);
+          alert('Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
+        });
+    } catch (error) {
+      console.error('Błąd podczas usuwania grupy:', error);
+      alert('Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
+    }
+  }
+};
+
+
   return (
-    <View style={styles.container}>
-      <Drawer.Screen 
-      options={{ 
-        title:"Grupy", 
-        headerShown: true, 
-        headerLeft: ()=> <DrawerToggleButton/>}} />
-      <Text style={styles.subtitle}>Grupy</Text>
-          <Link href="/(drawer)/groups/creategroup" asChild style={styles.button}>
+    <>
+      <View style={styles.container}>
+        <Drawer.Screen 
+          options={{ 
+            title: "Grupy", 
+            headerShown: true, 
+            headerLeft: () => <DrawerToggleButton/>
+          }} />
+        <Text style={styles.subtitle}>Grupy</Text>
+        <Link href="/(drawer)/groups/creategroup" asChild style={styles.button}>
           <Pressable>
             <Text style={styles.buttonText}>Utwórz grupę</Text>
           </Pressable>
-      </Link>
-    </View>);
+        </Link>
+      </View>
+      <View style={styles.container}>
+        <Text style={styles.title}>Lista Grup</Text>
+        <FlatList
+          data={groups}
+          renderItem={({ item }) => (
+            <View style={styles.groupItem}>
+              <Text>Nazwa: {item.id}</Text>
+              <Text>Członkowie: {item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
+              <TouchableOpacity onPress={() => {Platform.OS == "web"?handleDeleteGroupWeb(item.id):handleDeleteGroup(item.id)}}>
+              <Text style={styles.deleteButton}>Usuń</Text>
+            </TouchableOpacity>
+            <Link href={`/(drawer)/groups/edit_group?id=${item.id}`}>
+              <Text style={styles.editButton}>Edytuj</Text>
+            </Link>
+            </View>
+          )}
+          keyExtractor={item => item.id}
+        />
+      </View>
+    </>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -31,6 +115,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    padding: 20,
   },
   subtitle: {
     fontSize: 36,
@@ -43,12 +128,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 5,
     marginVertical: 10,
-    width: '20%'
   },
   buttonText: {
     color: "#fff", 
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "bold",
-    textAlign: 'center'
   },
-})
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  groupItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingVertical: 10,
+  },
+  deleteButton: {
+    color: 'red',
+  },
+  editButton: {
+    color: 'blue',
+  },
+});
