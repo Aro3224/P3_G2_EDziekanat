@@ -1,9 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getDatabase } from "firebase/database";
+import { getAnalytics } from "firebase/analytics";
 import { getMessaging, getToken } from "firebase/messaging";
 import { Platform } from "react-native";
-import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -20,28 +19,26 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Initialize database
-const db = getDatabase(app);
+const analytics = getAnalytics(app);
 
 // Initialize Firebase Cloud Messaging and get a reference to the service
 let messaging = null;
 if (Platform.OS === 'web') {
   messaging = getMessaging(app);
-  getToken(messaging, {vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk"})
-    .then((currentToken) => {
+
+  // Wczytaj token po załadowaniu strony
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const currentToken = await getToken(messaging, { vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk" });
       if (currentToken) {
         console.log('Firebase Cloud Messaging token:', currentToken);
       } else {
         console.log('No registration token available. Request permission to generate one.');
       }
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error('An error occurred while retrieving token:', err);
-    });
+    }
+  });
 }
 
-// Initialize Firebase Authentication and get a reference to the service
-const auth = getAuth(app);
-
-export { db, auth, messaging };
+export { app, analytics, messaging };
