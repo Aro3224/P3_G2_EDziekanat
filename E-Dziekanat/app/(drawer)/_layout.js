@@ -15,11 +15,19 @@ export default function Layout() {
         }}>
         </Drawer.Screen>
 
+        <Drawer.Screen name='templates'
+        options={{
+            drawerLabel: "Szablony powiadomień",
+            title: "Szablony powiadomień",
+            drawerIcon: ({size, color}) => <Ionicons name="reader-outline"  size={size} color={color}/>
+        }}>
+        </Drawer.Screen>
+
         <Drawer.Screen name='history'
         options={{
             drawerLabel: "Historia powiadomień",
             title: "Historia powiadomień",
-            drawerIcon: ({size, color}) => <Ionicons name="reader-outline"  size={size} color={color}/>
+            drawerIcon: ({size, color}) => <Ionicons name="calendar-clear-outline"  size={size} color={color}/>
         }}>
         </Drawer.Screen>
 
