@@ -89,17 +89,19 @@ const MyTextInput: React.FC<MyTextInputProps & React.ComponentProps<typeof Style
     return (
         <View>
             <LeftIcon>
-                <Octicons name={icon} size={30} color={brand} />
+                {icon === 'mail' && <Octicons name="mail" size={30} color={brand} />}
+                {icon === 'lock' && <Octicons name="lock" size={30} color={brand} />}
             </LeftIcon>
             <StyledInputLabel>{label}</StyledInputLabel>
             <StyledTextInput {...props} />
-            {isPassword && (
+            {isPassword && icon === 'lock' && (
                 <RightIcon onPress={() => setHidePassword && setHidePassword(!hidePassword)}>
-                    <Ionicons name={hidePassword ? 'md-eye-off' : 'md-eye'} size={30} color={darkLight} />
+                    <Ionicons name={hidePassword ? 'eye-off' : 'eye'} size={30} color={darkLight} />
                 </RightIcon>
             )}
         </View>
     )
 }
+
 
 export default Login;
