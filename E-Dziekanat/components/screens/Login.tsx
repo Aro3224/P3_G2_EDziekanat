@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyledContainer, InnerContainer, PageLogo, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, StyledTextInput, RightIcon, StyledButton, ButtonText, Colors, MsgBox } from '../styles';
+import { StyledContainer, InnerContainer, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, StyledTextInput, RightIcon, StyledButton, ButtonText, Colors, MsgBox } from '../styles';
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import { Formik } from 'formik';
@@ -10,20 +10,26 @@ const { brand, darkLight } = Colors;
 
 const Login: React.FC = () => {
     const [hidePassword, setHidePassword] = useState<boolean>(true);
+    const [message, setMessage] = useState<string>("");
+
+    const handleLogin = (values: { email: string, password: string }) => {
+        // Tutaj możesz umieścić logikę obsługi logowania, np. wywołując API do logowania
+        console.log(values);
+
+        // W zależności od wyniku logowania, ustaw odpowiednią wiadomość
+        setMessage("Kliknąłeś przycisk Login!");
+    };
 
     return (
         <StyledContainer>
             <StatusBar style="dark" />
             <InnerContainer>
-                {/*<PageLogo resizeMode="cover" source={require('../assets/icon')} />*/}
                 <PageTitle>E-Dziekanat</PageTitle>
                 <SubTitle>Logowanie</SubTitle>
 
                 <Formik
                     initialValues={{ email: '', password: '' }}
-                    onSubmit={(values) => {
-                        console.log(values);
-                    }}
+                    onSubmit={handleLogin}
                 >
                     {({ handleChange, handleBlur, handleSubmit, values }) => (
                         <StyledFormArea>
@@ -51,17 +57,17 @@ const Login: React.FC = () => {
                                 hidePassword={hidePassword}
                                 setHidePassword={setHidePassword}
                             />
-                            <MsgBox></MsgBox>
-                            <StyledButton onPress={handleSubmit}>
+                            <MsgBox>{message}</MsgBox>
+                            <StyledButton onPress={() => handleSubmit()}>
                                 <ButtonText>Login</ButtonText>
                             </StyledButton>
+
                         </StyledFormArea>
                     )}
                 </Formik>
             </InnerContainer>
         </StyledContainer>
     );
-
 }
 
 interface MyTextInputProps {
