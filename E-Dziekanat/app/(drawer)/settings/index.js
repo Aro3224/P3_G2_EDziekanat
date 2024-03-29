@@ -11,10 +11,8 @@ export default function SettingsPage({ navigation }) {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
   const handleLogout = () => {
-    // Wylogowanie użytkownika z Firebase
     signOut(auth)
       .then(() => {
-        // Jeśli wylogowanie się powiodło, ustaw isAuthenticated na false
         setIsAuthenticated(false);
         console.log("Wylogowano użytkownika");
       })
