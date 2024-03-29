@@ -10,10 +10,11 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 // colors
 const { brand, darkLight } = Colors;
 
-const Login: React.FC = () => {
+// Pozostała część Twojego kodu z login.tsx bez zmian
+
+const Login: React.FC<{ onLoginSuccess: () => void }> = (props) => {
     const [hidePassword, setHidePassword] = useState<boolean>(true);
     const [message, setMessage] = useState<string>("");
-    const authentication = auth;
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async (values: { email: string, password: string }) => {
@@ -21,14 +22,13 @@ const Login: React.FC = () => {
         try {
             const response = await signInWithEmailAndPassword(auth, values.email, values.password)
             console.log(response);
-
+            props.onLoginSuccess();
         } catch (error: any) {
             console.log(error);
             setMessage('Logowanie nie powiodło się: ' + error.message)
         } finally {
             setLoading(false);
         }
-
     };
 
     return (
