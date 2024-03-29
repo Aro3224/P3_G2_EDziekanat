@@ -6,7 +6,7 @@ import { Link } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { getDatabase, ref, set } from "firebase/database";
-
+import axios from 'axios';
 
 
 export default function AddUserPage() {
@@ -24,7 +24,10 @@ export default function AddUserPage() {
     return password.length >= 6;
   };
 
-  const addUser = () => {
+
+
+  const createUser = async (userEmail, userPass) => {
+
     setEmailError('');
     setPassError('');
 
@@ -37,38 +40,20 @@ export default function AddUserPage() {
       setPassError('Hasło musi składać się z co najmniej 6 znaków.');
       return;
     }
-    const auth = getAuth();
 
-    createUserWithEmailAndPassword(auth, userEmail, userPass)
-  .then((userCredential) => {
-
-
-      const uid = userCredential.user.uid;
-      console.log('User account created & signed in!');
-      
-      set(ref(db, `/users/${uid}`),
-      { email: userEmail })
-      .then(() => {
-        console.log('UID użytkownika zostało dodane do bazy danych.');
+    try {
+      const response = await axios.post('http://localhost:8000/api/create-user/', {
+        email: userEmail,
+        password: userPass,
+      });
+      console.log(response.data);
       onChangeEmail("");
       onChangePass("");
-      Alert.alert("Dodano użytkownika","Użytkownik został dodany do systemu")
-      })
-    })
-    .catch(error => {
-      if (error.code === 'auth/email-already-in-use') {
-        console.log('That email address is already in use!');
-        setEmailError('Ten adres e-mail jest już używany.');
-      }
+    } catch (error) {
+      console.error('Błąd podczas wysyłania żądania utworzenia użytkownika:', error);
+    }
+  };
 
-      if (error.code === 'auth/invalid-email') {
-        console.log('That email address is invalid!');
-        setEmailError('Ten adres e-mail jest nieprawidłowy.');
-      }
-
-      console.error(error);
-    });
-  }
 
   return (
     <View style={styles.container}>
@@ -99,7 +84,7 @@ export default function AddUserPage() {
         />
         <Text style={styles.errorText}>{passError}</Text>
       </SafeAreaView>
-      <Button title='Dodaj' onPress={addUser}/>
+      <Button title='Dodaj' onPress={() => createUser(userEmail, userPass)}/>
     </View>
   );
 }

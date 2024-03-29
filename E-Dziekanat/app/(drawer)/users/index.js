@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform, Alert } from 'react-native';
+import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform, Alert, } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link, Redirect } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
 import { getAuth, createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 import { getDatabase, onValue, ref, set, remove } from "firebase/database";
+import axios from 'axios';
+
 
 export default function UsersPage() {
   
@@ -28,7 +30,7 @@ export default function UsersPage() {
   }, []);
 
 
-  const handleDeleteUser = (userId) => {
+  const deleteUserMobile = (userId) => {
     Alert.alert(
       'Potwierdzenie',
       'Czy na pewno chcesz usunąć tego użytkownika?',
@@ -38,14 +40,16 @@ export default function UsersPage() {
           text: 'Usuń',
           onPress: async () => {
             try {
-              // Usuwanie użytkownika z bazy danych Firebase Realtime
-              await remove(ref(db, `/users/${userId}`));
-
-              console.log('Użytkownik został usunięty z bazy danych.');
+              const response = await axios.post('http://localhost:8000/api/delete-user/', {
+                UID: userId,
+              });
+              console.log(response.data);
             } catch (error) {
-              console.error('Błąd podczas usuwania użytkownika:', error);
+              console.error('Błąd podczas wysyłania żądania usunięcia użytkownika:', error);
               Alert.alert('Błąd', 'Wystąpił błąd podczas usuwania użytkownika. Spróbuj ponownie później.');
             }
+              
+            
           },
         },
       ],
@@ -53,27 +57,23 @@ export default function UsersPage() {
     );
   };
 
-  const handleDeleteUserWeb = (userId) => {
+ 
+
+
+  const deleteUserWeb = async (userId) => {
     const confirmation = window.confirm('Czy na pewno chcesz usunąć tego użytkownika?');
-    
     if (confirmation) {
-      try {
-        // Usuwanie użytkownika z bazy danych Firebase Realtime
-        remove(ref(db, `/users/${userId}`))
-          .then(() => {
-            console.log('Użytkownik został usunięty z bazy danych.');
-          })
-          .catch((error) => {
-            console.error('Błąd podczas usuwania użytkownika:', error);
-            alert('Wystąpił błąd podczas usuwania użytkownika. Spróbuj ponownie później.');
-          });
-      } catch (error) {
-        console.error('Błąd podczas usuwania użytkownika:', error);
-        alert('Wystąpił błąd podczas usuwania użytkownika. Spróbuj ponownie później.');
-      }
+    try {
+      const response = await axios.post('http://localhost:8000/api/delete-user/', {
+        UID: userId,
+      });
+      console.log(response.data);
+    } catch (error) {
+      console.error('Błąd podczas wysyłania żądania usunięcia użytkownika:', error);
     }
   };
-  
+}
+
   
 
   return (
@@ -98,12 +98,15 @@ export default function UsersPage() {
         <View style={styles.userItem}>
           <Text>ID: {item.id}</Text>
           <Text>Email: {item.email}</Text>
-          <TouchableOpacity onPress={() => {Platform.OS == "web"?handleDeleteUserWeb(item.id):handleDeleteUser(item.id)}}>
+          <TouchableOpacity onPress={() => {Platform.OS == "web"?deleteUserWeb(item.id):deleteUserMobile(item.id)}}>
               <Text style={styles.deleteButton}>Usuń</Text>
             </TouchableOpacity>
             <Link href={`/(drawer)/users/edit_user?id=${item.id}`}>
               <Text style={styles.editButton}>Edytuj</Text>
             </Link>
+            <TouchableOpacity onPress={() => sendDataToBackend(item.id)}>
+              <Text style={styles.deleteButton}>Wyślij</Text> 
+            </TouchableOpacity>
         </View>
       )}
       keyExtractor={item => item.id}
