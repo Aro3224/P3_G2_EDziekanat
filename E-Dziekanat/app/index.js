@@ -11,5 +11,9 @@ export default function Page() {
     setIsAuthenticated(true);
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
+
   return isAuthenticated ? <Redirect href={"/(drawer)/home"}/> : <Login onLoginSuccess={handleLoginSuccess} />;
 }
