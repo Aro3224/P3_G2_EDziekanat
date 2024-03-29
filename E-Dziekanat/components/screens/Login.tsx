@@ -4,6 +4,8 @@ import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import { Formik } from 'formik';
 import { Octicons, Ionicons } from '@expo/vector-icons';
+import { auth } from '../configs/firebase-config';
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 // colors
 const { brand, darkLight } = Colors;
@@ -11,13 +13,22 @@ const { brand, darkLight } = Colors;
 const Login: React.FC = () => {
     const [hidePassword, setHidePassword] = useState<boolean>(true);
     const [message, setMessage] = useState<string>("");
+    const authentication = auth;
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (values: { email: string, password: string }) => {
-        // Tutaj możesz umieścić logikę obsługi logowania, np. wywołując API do logowania
-        console.log(values);
+    const handleLogin = async (values: { email: string, password: string }) => {
+        setLoading(true);
+        try {
+            const response = await signInWithEmailAndPassword(auth, values.email, values.password)
+            console.log(response);
 
-        // W zależności od wyniku logowania, ustaw odpowiednią wiadomość
-        setMessage("Kliknąłeś przycisk Login!");
+        } catch (error: any) {
+            console.log(error);
+            setMessage('Logowanie nie powiodło się: ' + error.message)
+        } finally {
+            setLoading(false);
+        }
+
     };
 
     return (
