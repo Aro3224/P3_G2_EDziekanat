@@ -51,6 +51,7 @@ export default function AddUserPage() {
       onChangePass("");
     } catch (error) {
       console.error('Błąd podczas wysyłania żądania utworzenia użytkownika:', error);
+      alert("Wystąpił błąd podczas dodawania użytkownika. Spróbuj ponownie później.")
     }
   };
 

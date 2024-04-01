@@ -91,45 +91,37 @@ export default function TemplatesPage() {
   };
 
   return (
-    <>
-      <View style={styles.container}>
-        <Drawer.Screen 
-          options={{ 
-            title:"Szablony", 
-            headerShown: true, 
-            headerLeft: ()=> <DrawerToggleButton/>}} />
-        <Text>Szablony</Text>
-        <Link href="/(drawer)/templates/add_template" asChild style={styles.button}>
-          <Pressable>
-            <Text style={styles.buttonText}>Dodaj szablon</Text>
-          </Pressable>
-        </Link>
+    <View style={styles.container}>
+      <Drawer.Screen 
+        options={{ 
+          title:"Szablony", 
+          headerShown: true, 
+          headerLeft: ()=> <DrawerToggleButton/>}} />
+      <Text style={styles.title}>Szablony</Text>
+      <Link href="/(drawer)/templates/add_template" asChild style={styles.button}>
+        <Pressable>
+          <Text style={styles.buttonText}>Dodaj szablon</Text>
+        </Pressable>
+      </Link>
+      <View style={styles.templatesContainer}>
+        {templates.map(template => (
+          <TouchableOpacity
+            key={template.id}
+            onPress={() => handleSetTemplateInUse(template.id)}
+            style={[
+              styles.templateItem,
+              template.inUse && styles.selectedTemplateItem
+            ]}
+          >
+            <Text style={styles.templateTitle}>{template.title}</Text>
+            <Text style={styles.templateContent}>{template.content}</Text>
+            <TouchableOpacity onPress={() => {Platform.OS == "web"?handleDeleteTemplateWeb(template.id):handleDeleteTemplate(template.id)}}>
+              <Text style={styles.deleteButton}>Usuń</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        ))}
       </View>
-      <View style={styles.container}>
-        <Text style={styles.title}>Lista Szablonów</Text>
-        <FlatList
-          data={templates}
-          renderItem={({ item }) => (
-            <View style={styles.templeteItem}>
-              <Text>ID: {item.id}</Text>
-              <Text>Tytuł: {item.title}</Text>
-              <Text>Treść: {item.content}</Text>
-              <Text>Aktualnie używany: {item.inUse===false?"nie":"tak"}</Text>
-              <TouchableOpacity onPress={() => handleSetTemplateInUse(item.id)}>
-                <Text style={styles.useButton}>Ustaw jako używany</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => {Platform.OS == "web"?handleDeleteTemplateWeb(item.id):handleDeleteTemplate(item.id)}}>
-                <Text style={styles.deleteButton}>Usuń</Text>
-              </TouchableOpacity>
-              <Link href={`/(drawer)/templates/edit_template?id=${item.id}`}>
-                <Text style={styles.editButton}>Edytuj</Text>
-              </Link>
-            </View>
-          )}
-          keyExtractor={item => item.id}
-        />
-      </View>
-    </>
+    </View>
   );
 }
 
@@ -158,19 +150,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  userItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingVertical: 10,
+  templatesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
-  useButton: {
-    color: 'green',
-    marginBottom: 5,
+  templateItem: {
+    backgroundColor: '#eee',
+    padding: 10,
+    margin: 5,
+    borderRadius: 5,
+    width: '45%',
+  },
+  selectedTemplateItem: {
+    backgroundColor: '#aaf',
+  },
+  templateTitle: {
+    fontWeight: 'bold',
+  },
+  templateContent: {
+    marginTop: 5,
   },
   deleteButton: {
     color: 'red',
-  },
-  editButton: {
-    color: 'blue',
+    marginTop: 5,
   },
 });
