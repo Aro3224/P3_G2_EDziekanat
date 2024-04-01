@@ -1,44 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
-import { get, child, ref, update } from 'firebase/database';
+import { update, ref, get } from 'firebase/database';
 import { db } from '../../../components/configs/firebase-config';
+import axios from 'axios';
 
 export default function EditUserPage() {
     const route = useRoute();
     const userId = route.params?.id;
     const path = 'users/'+ userId;
-    const [userData, setUserData] = useState(null);
     const [textNameValue, setTextNameValue] = useState("");
     const [textSurnameValue, setTextSurnameValue] = useState("");
     const [textEmailValue, setTextEmailValue] = useState("");
     const [textPhoneValue, setTextPhoneValue] = useState("");
     const [loading, setLoading] = useState(true);
 
-    const ReadData = async () => {
-        try {
-            const snapshot = await get(child(ref(db), path));
-            if (snapshot.exists()) {
-                const userData = snapshot.val();
-                setUserData(userData);
-                setTextEmailValue(userData?.email || '');
-                setTextNameValue(userData?.Imie || '');
-                setTextSurnameValue(userData?.Nazwisko || '');
-                setTextPhoneValue(userData?.NrTelefonu || '');
-            } else {
-                alert("Wykładowca nie istnieje");
+    useEffect(() => {
+        const readData = async () => {
+            try {
+                const snapshot = await get(ref(db, path));
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    setTextEmailValue(userData?.email || '');
+                    setTextNameValue(userData?.Imie || '');
+                    setTextSurnameValue(userData?.Nazwisko || '');
+                    setTextPhoneValue(userData?.NrTelefonu || '');
+                } else {
+                    alert("Wykładowca nie istnieje");
+                }
+                setLoading(false);
+            } catch (error) {
+                console.error('Error:', error);
+                setLoading(false);
             }
-            setLoading(false);
+        };
+        readData();
+    }, []);
+
+    const editUser = async () => {
+        try {
+            const response = await axios.post('http://localhost:8000/api/edit-user/', {
+                UID: userId,
+                email: textEmailValue,
+                Imie: textNameValue,
+                Nazwisko: textSurnameValue,
+                NrTelefonu: textPhoneValue,
+            });
+            console.log(response.data);
+            alert("Dane zostały zaaktualizowane");
         } catch (error) {
-            console.error('Error:', error);
-            setLoading(false);
+            console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
+            alert("Wystąpił błąd podczas aktualizacji danych");
         }
     };
-
-    useEffect(() => {
-        ReadData();
-    }, []);
 
     if (loading) {
         return (
@@ -47,43 +62,6 @@ export default function EditUserPage() {
             </View>
         );
     }
-
-    const EditData= () => {
-        // Saving text in the database
-        update(ref(db, path), {
-          Imie: textNameValue
-        }).then(() => {
-          // Data saved successfully!
-          console.log('Name updated')
-        })
-          .catch((error) => {
-            // Write failed...
-            alert(error);
-          });
-
-        update(ref(db, path), {
-            Nazwisko: textSurnameValue
-          }).then(() => {
-            // Data saved successfully!
-            console.log('Surname updated')
-          })
-            .catch((error) => {
-              // Write failed...
-              alert(error);
-            });
-
-          update(ref(db, path), {
-            NrTelefonu: textPhoneValue
-          }).then(() => {
-            // Data saved successfully!
-            console.log('Phone number updated')
-          })
-            .catch((error) => {
-              // Write failed...
-              alert(error);
-            });
-        alert("Dane zostały zaaktualizowane")
-      };
 
     return (
         <View style={styles.container}>
@@ -119,12 +97,12 @@ export default function EditUserPage() {
                 value={textPhoneValue}
                 onChangeText={setTextPhoneValue}
             />
-            <TouchableOpacity style={styles.button} onPress={EditData}>
+            <TouchableOpacity style={styles.button} onPress={editUser}>
                 <Text style={styles.buttonText}>Zapisz</Text>
             </TouchableOpacity>
         </View>
     );
-}  
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -157,8 +135,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadius: 5,
         marginVertical: 10,
-      },
-      buttonText: {
+    },
+    buttonText: {
         color: "#fff", 
         fontSize: 16,
         fontWeight: "bold",
