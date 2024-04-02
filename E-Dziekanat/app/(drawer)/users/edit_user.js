@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
-import { update, ref, get } from 'firebase/database';
+import { ref, get } from 'firebase/database';
 import { db } from '../../../components/configs/firebase-config';
 import axios from 'axios';
+import { Checkbox } from 'react-native-paper';
 
 export default function EditUserPage() {
     const route = useRoute();
@@ -13,8 +14,14 @@ export default function EditUserPage() {
     const [textNameValue, setTextNameValue] = useState("");
     const [textSurnameValue, setTextSurnameValue] = useState("");
     const [textEmailValue, setTextEmailValue] = useState("");
+    const [textPasswordValue, setTextPasswordValue] = useState("");
     const [textPhoneValue, setTextPhoneValue] = useState("");
     const [loading, setLoading] = useState(true);
+    const [isPasswordEditable, setIsPasswordEditable] = useState(false);
+    const [placeHolderValue, setPlaceHolderValue] = useState("Edycja hasła zablokowana");
+    const [checkedWykladowca, setCheckedWykladowca] = useState(false);
+    const [checkedPracownik, setCheckedPracownik] = useState(false);
+    const [textRoleValue, setTextRoleValue] = useState("");
 
     useEffect(() => {
         const readData = async () => {
@@ -26,6 +33,11 @@ export default function EditUserPage() {
                     setTextNameValue(userData?.Imie || '');
                     setTextSurnameValue(userData?.Nazwisko || '');
                     setTextPhoneValue(userData?.NrTelefonu || '');
+                    if (userData?.Rola == "Wykładowca"){
+                        setCheckedWykladowca(userData?.Rola || '');
+                    }else if(userData?.Rola == "Pracownik"){
+                        setCheckedPracownik(userData?.Rola || '');
+                    }
                 } else {
                     alert("Wykładowca nie istnieje");
                 }
@@ -39,20 +51,28 @@ export default function EditUserPage() {
     }, []);
 
     const editUser = async () => {
-        try {
-            const response = await axios.post('http://localhost:8000/api/edit-user/', {
-                UID: userId,
-                email: textEmailValue,
-                Imie: textNameValue,
-                Nazwisko: textSurnameValue,
-                NrTelefonu: textPhoneValue,
-            });
-            console.log(response.data);
-            alert("Dane zostały zaaktualizowane");
-        } catch (error) {
-            console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
-            alert("Wystąpił błąd podczas aktualizacji danych");
+        if (textRoleValue != "")
+        {
+            try {
+                const response = await axios.post('http://localhost:8000/api/edit-user/', {
+                    UID: userId,
+                    email: textEmailValue,
+                    password: textPasswordValue,
+                    Imie: textNameValue,
+                    Nazwisko: textSurnameValue,
+                    NrTelefonu: textPhoneValue,
+                    Role: textRoleValue,
+                });
+                console.log(response.data);
+                alert("Dane zostały zaaktualizowane");
+            } catch (error) {
+                console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
+                alert("Wystąpił błąd podczas aktualizacji danych");
+            }
+        }else{
+            alert("Wybierz stanowisko pracownika");
         }
+        
     };
 
     if (loading) {
@@ -63,6 +83,28 @@ export default function EditUserPage() {
         );
     }
 
+    const setPasswordEditable = () => {
+        setIsPasswordEditable(!isPasswordEditable);
+        if (isPasswordEditable) { 
+            setTextPasswordValue("");
+            setPlaceHolderValue("Edycja hasła zablokowana");
+        }else{
+            setPlaceHolderValue("Wprowadź nowe hasło");
+        }
+    };
+
+    const handleRoleCheckbox = (role) => {
+        if (role === 'wykladowca') {
+            setCheckedWykladowca(true);
+            setCheckedPracownik(false);
+            setTextRoleValue("Wykładowca")
+        } else if (role === 'pracownik') {
+            setCheckedWykladowca(false);
+            setCheckedPracownik(true);
+            setTextRoleValue("Pracownik")
+        }
+    };
+    
     return (
         <View style={styles.container}>
             <Drawer.Screen 
@@ -71,32 +113,55 @@ export default function EditUserPage() {
                     headerShown: true, 
                 }}
             />
-            <Text style={styles.subtitle}>Edytuj Wykładowcę</Text>
+            <Text style={styles.subtitle}>Edytuj Pracownika</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Wpisz email wykładowcy.."
+                placeholder="Wpisz email użytkownika.."
                 value={textEmailValue}
                 onChangeText={setTextEmailValue}
-                editable={false}
+            />
+            <TextInput
+                style={[styles.input, !isPasswordEditable && styles.inputLocked]}
+                placeholder={placeHolderValue}
+                value={textPasswordValue}
+                onChangeText={setTextPasswordValue}
+                editable={isPasswordEditable}
             />
             <TextInput
                 style={styles.input}
-                placeholder="Wpisz imię wykładowcy.."
+                placeholder="Wpisz imię użytkownika.."
                 value={textNameValue}
                 onChangeText={setTextNameValue}
             />
             <TextInput
                 style={styles.input}
-                placeholder="Wpisz nazwisko wykładowcy.."
+                placeholder="Wpisz nazwisko użytkownika.."
                 value={textSurnameValue}
                 onChangeText={setTextSurnameValue}
             />
             <TextInput
                 style={styles.input}
-                placeholder="Wpisz numer telefonu..."
+                placeholder="Wpisz numer telefonu użytkownika..."
                 value={textPhoneValue}
                 onChangeText={setTextPhoneValue}
             />
+            <View style={styles.checkboxContainer}>
+                <Checkbox
+                    status={checkedWykladowca ? 'checked' : 'unchecked'}
+                    onPress={() => handleRoleCheckbox('wykladowca')}
+                />
+                <Text>Wykładowca</Text>
+            </View>
+            <View style={styles.checkboxContainer}>
+                <Checkbox
+                    status={checkedPracownik ? 'checked' : 'unchecked'}
+                    onPress={() => handleRoleCheckbox('pracownik')}
+                />
+                <Text>Pracownik</Text>
+            </View>
+            <TouchableOpacity style={styles.button} onPress={setPasswordEditable}>
+                <Text style={styles.buttonText}>{isPasswordEditable ? 'Naciśnij aby anulować edycje hasła' : 'Naciśnij aby edytować hasło'}</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={editUser}>
                 <Text style={styles.buttonText}>Zapisz</Text>
             </TouchableOpacity>
@@ -140,5 +205,12 @@ const styles = StyleSheet.create({
         color: "#fff", 
         fontSize: 16,
         fontWeight: "bold",
+    },
+    inputLocked: {
+        borderColor: 'orange'
+    },
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
 });

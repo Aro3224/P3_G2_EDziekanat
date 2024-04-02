@@ -82,6 +82,10 @@ def edit_user(request):
                 if new_email:
                     auth.update_user(uid, email=new_email)
 
+                new_password = data.get('password')
+                if new_password != "":
+                    auth.update_user(uid, password=new_password)
+
                 database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
                 user_data = {} 
                 if new_email:
@@ -98,6 +102,10 @@ def edit_user(request):
                 new_phone = data.get('NrTelefonu')
                 if new_phone:
                     user_data['NrTelefonu'] = new_phone
+
+                new_role = data.get('Role')
+                if new_role:
+                    user_data['Rola'] = new_role
 
                 response = requests.patch(f"{database_url}/users/{uid}.json", json=user_data)
 
