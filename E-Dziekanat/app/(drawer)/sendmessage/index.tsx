@@ -1,26 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
-import { ref, update } from "firebase/database";
+import { ref, update, onValue } from "firebase/database";
 import { db } from '../../../components/configs/firebase-config';
 
 export default function SendMessagePage() {
   const [message, setMessage] = useState('');
-  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [messageTitle, setMessageTitle] = useState('');
+
+  useEffect(() => {
+    // Load users from Firebase
+    const usersRef = ref(db, 'users');
+    onValue(usersRef, (snapshot) => {
+      const usersData = snapshot.val();
+      if (usersData) {
+        const usersArray = Object.keys(usersData).map((key) => ({
+          id: key,
+          name: usersData[key].name,
+          email: usersData[key].email,
+        }));
+        setUsers(usersArray);
+      }
+    });
+  }, []);
+
+  const toggleUserSelection = (userId: string) => {
+    const updatedSelectedUsers = selectedUsers.includes(userId)
+      ? selectedUsers.filter((id) => id !== userId)
+      : [...selectedUsers, userId];
+    setSelectedUsers(updatedSelectedUsers);
+  };
 
   const sendMessage = () => {
     // Implement sending message logic here
     console.log('Message sent:', message);
-    console.log('To:', selectedUser);
+    console.log('To:', selectedUsers);
     console.log('Template:', selectedTemplate);
     console.log('Title:', messageTitle);
     
     // Clear inputs after sending
     setMessage('');
-    setSelectedUser('');
+    setSelectedUsers([]);
     setSelectedTemplate('');
     setMessageTitle('');
   }
@@ -37,18 +61,25 @@ export default function SendMessagePage() {
       <View style={styles.upperPanelContainer}>
         {/* Panel wyboru użytkownika */}
         <View style={styles.upperPanel}>
-          <TextInput
-            style={styles.input}
-            placeholder="Wybierz użytkownika"
-            value={selectedUser}
-            onChangeText={setSelectedUser}
-          />
+          {users.map((user) => (
+            <TouchableOpacity
+              key={user.id}
+              style={[
+                styles.userOption,
+                selectedUsers.includes(user.id) && styles.selectedUserOption,
+              ]}
+              onPress={() => toggleUserSelection(user.id)}
+            >
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={styles.userEmail}>{user.email}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
         {/* Panel wyboru szablonu wiadomości */}
         <View style={styles.upperPanel}>
           <TextInput
             style={styles.input}
-            placeholder="Wybierz szablon wiadomości"
+            placeholder="Szablon"
             value={selectedTemplate}
             onChangeText={setSelectedTemplate}
           />
@@ -57,7 +88,7 @@ export default function SendMessagePage() {
         <View style={styles.upperPanel}>
           <TextInput
             style={styles.input}
-            placeholder="Wprowadź tytuł wiadomości"
+            placeholder="Temat"
             value={messageTitle}
             onChangeText={setMessageTitle}
           />
@@ -68,7 +99,7 @@ export default function SendMessagePage() {
       <View style={styles.lowerPanel}>
         <TextInput
           style={styles.messageInput}
-          placeholder="Wpisz treść wiadomości..."
+          placeholder="Treść wiadomości..."
           multiline
           value={message}
           onChangeText={setMessage}
@@ -105,10 +136,31 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#f0f0f0',
     marginBottom: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderRadius: 10,
     paddingVertical: 10,
+  },
+  userOption: {
+    width: '100%',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#dcdcdc',
+    borderRadius: 5,
+    marginBottom: 5,
+  },
+  selectedUserOption: {
+    backgroundColor: '#007bff',
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#666',
   },
   lowerPanel: {
     width: '100%',
