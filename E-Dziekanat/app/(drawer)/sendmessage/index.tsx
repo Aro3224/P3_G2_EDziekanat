@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
-import { ref, update, onValue } from "firebase/database";
+import { ref, onValue } from "firebase/database";
 import { db } from '../../../components/configs/firebase-config';
 
 export default function SendMessagePage() {
   const [message, setMessage] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [templates, setTemplates] = useState<{ id: string; content: string; title: string; inUse: boolean }[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<{ id: string; content: string; title: string } | null>(null);
   const [messageTitle, setMessageTitle] = useState('');
 
   useEffect(() => {
@@ -26,6 +27,28 @@ export default function SendMessagePage() {
         setUsers(usersArray);
       }
     });
+
+    // Load templates from Firebase
+    const templatesRef = ref(db, 'templates');
+    onValue(templatesRef, (snapshot) => {
+      const templatesData = snapshot.val();
+      if (templatesData) {
+        const templatesArray = Object.keys(templatesData).map((key) => ({
+          id: key,
+          content: templatesData[key].content,
+          title: templatesData[key].title,
+          inUse: templatesData[key].inUse || false, // Default value if not specified
+        }));
+        setTemplates(templatesArray);
+        // Select template with inUse set to true
+        const selected = templatesArray.find((template) => template.inUse);
+        setSelectedTemplate(selected || null);
+        if (selected) {
+          setMessage(selected.content); // Set the message content when a template is selected
+          setMessageTitle(selected.title); // Set the message title when a template is selected
+        }
+      }
+    });
   }, []);
 
   const toggleUserSelection = (userId: string) => {
@@ -33,6 +56,12 @@ export default function SendMessagePage() {
       ? selectedUsers.filter((id) => id !== userId)
       : [...selectedUsers, userId];
     setSelectedUsers(updatedSelectedUsers);
+  };
+
+  const selectTemplate = (template: { id: string; content: string; title: string }) => {
+    setSelectedTemplate(template);
+    setMessage(template.content); // Set the message content when a template is selected
+    setMessageTitle(template.title); // Set the message title when a template is selected
   };
 
   const sendMessage = () => {
@@ -45,7 +74,7 @@ export default function SendMessagePage() {
     // Clear inputs after sending
     setMessage('');
     setSelectedUsers([]);
-    setSelectedTemplate('');
+    setSelectedTemplate(null);
     setMessageTitle('');
   }
 
@@ -77,12 +106,19 @@ export default function SendMessagePage() {
         </View>
         {/* Panel wyboru szablonu wiadomości */}
         <View style={styles.upperPanel}>
-          <TextInput
-            style={styles.input}
-            placeholder="Szablon"
-            value={selectedTemplate}
-            onChangeText={setSelectedTemplate}
-          />
+          <Text style={styles.sectionTitle}>Wybierz szablon wiadomości:</Text>
+          {templates.map((template) => (
+            <TouchableOpacity
+              key={template.id}
+              style={[
+                styles.templateOption,
+                selectedTemplate && selectedTemplate.id === template.id && styles.selectedTemplateOption,
+              ]}
+              onPress={() => selectTemplate(template)}
+            >
+              <Text>{template.title}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
         {/* Panel wprowadzania tytułu wiadomości */}
         <View style={styles.upperPanel}>
@@ -103,6 +139,7 @@ export default function SendMessagePage() {
           multiline
           value={message}
           onChangeText={setMessage}
+          editable={!selectedTemplate}
         />
         <TouchableOpacity style={styles.button} onPress={sendMessage}>
           <Text style={styles.buttonText}>Wyślij</Text>
@@ -161,6 +198,21 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     color: '#666',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  templateOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#dcdcdc',
+    borderRadius: 5,
+    marginBottom: 5,
+  },
+  selectedTemplateOption: {
+    backgroundColor: '#007bff',
   },
   lowerPanel: {
     width: '100%',
