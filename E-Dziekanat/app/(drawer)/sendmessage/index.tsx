@@ -5,12 +5,19 @@ import { DrawerToggleButton } from '@react-navigation/drawer';
 import { ref, onValue } from "firebase/database";
 import { db } from '../../../components/configs/firebase-config';
 
+interface Template {
+  id: string;
+  content: string;
+  title: string;
+  inUse: boolean;
+}
+
 export default function SendMessagePage() {
   const [message, setMessage] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [templates, setTemplates] = useState<{ id: string; content: string; title: string; inUse: boolean }[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<{ id: string; content: string; title: string } | null>(null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [messageTitle, setMessageTitle] = useState('');
 
   useEffect(() => {
@@ -37,15 +44,15 @@ export default function SendMessagePage() {
           id: key,
           content: templatesData[key].content,
           title: templatesData[key].title,
-          inUse: templatesData[key].inUse || false, // Default value if not specified
+          inUse: templatesData[key].inUse || false,
         }));
         setTemplates(templatesArray);
-        // Select template with inUse set to true
+
         const selected = templatesArray.find((template) => template.inUse);
         setSelectedTemplate(selected || null);
         if (selected) {
-          setMessage(selected.content); // Set the message content when a template is selected
-          setMessageTitle(selected.title); // Set the message title when a template is selected
+          setMessage(selected.content);
+          setMessageTitle(selected.title);
         }
       }
     });
@@ -58,24 +65,31 @@ export default function SendMessagePage() {
     setSelectedUsers(updatedSelectedUsers);
   };
 
-  const selectTemplate = (template: { id: string; content: string; title: string }) => {
+  const selectTemplate = (template: Template | null) => {
     setSelectedTemplate(template);
-    setMessage(template.content); // Set the message content when a template is selected
-    setMessageTitle(template.title); // Set the message title when a template is selected
+    if (template) {
+      setMessage(template.content);
+      setMessageTitle(template.title);
+    } else {
+      setMessage('');
+      if (selectedTemplate !== null) {
+        setMessageTitle('');
+      }
+    }
   };
 
   const sendMessage = () => {
-    // Implement sending message logic here
     console.log('Message sent:', message);
     console.log('To:', selectedUsers);
     console.log('Template:', selectedTemplate);
     console.log('Title:', messageTitle);
     
-    // Clear inputs after sending
-    setMessage('');
+    // Clear inputs after sending, but keep message content if it's a template
+    if (!selectedTemplate) {
+      setMessage('');
+      setMessageTitle('');
+    }
     setSelectedUsers([]);
-    setSelectedTemplate(null);
-    setMessageTitle('');
   }
 
   return (
@@ -90,6 +104,7 @@ export default function SendMessagePage() {
       <View style={styles.upperPanelContainer}>
         {/* Panel wyboru użytkownika */}
         <View style={styles.upperPanel}>
+          <Text style={styles.sectionTitle}>Wybierz użytkowników:</Text>
           {users.map((user) => (
             <TouchableOpacity
               key={user.id}
@@ -119,6 +134,15 @@ export default function SendMessagePage() {
               <Text>{template.title}</Text>
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            style={[
+              styles.templateOption,
+              !selectedTemplate && styles.selectedTemplateOption,
+            ]}
+            onPress={() => selectTemplate(null)}
+          >
+            <Text>Pusty</Text>
+          </TouchableOpacity>
         </View>
         {/* Panel wprowadzania tytułu wiadomości */}
         <View style={styles.upperPanel}>
@@ -127,6 +151,7 @@ export default function SendMessagePage() {
             placeholder="Temat"
             value={messageTitle}
             onChangeText={setMessageTitle}
+            editable={selectedTemplate === null}
           />
         </View>
       </View>
@@ -139,7 +164,7 @@ export default function SendMessagePage() {
           multiline
           value={message}
           onChangeText={setMessage}
-          editable={!selectedTemplate}
+          editable={selectedTemplate === null}
         />
         <TouchableOpacity style={styles.button} onPress={sendMessage}>
           <Text style={styles.buttonText}>Wyślij</Text>
@@ -252,3 +277,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+
+export {};
