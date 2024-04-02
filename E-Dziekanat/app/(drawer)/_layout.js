@@ -15,6 +15,14 @@ export default function Layout() {
         }}>
         </Drawer.Screen>
 
+        <Drawer.Screen name='sendmessage'
+        options={{
+            drawerLabel: "Wyślij wiadomość",
+            title: "Wyślij wiadomość",
+            drawerIcon: ({size, color}) => <Ionicons name="mail"  size={size} color={color}/>
+        }}>
+        </Drawer.Screen>
+
         <Drawer.Screen name='templates'
         options={{
             drawerLabel: "Szablony powiadomień",
