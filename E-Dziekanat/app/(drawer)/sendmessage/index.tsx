@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, get } from "firebase/database";
 import { db } from '../../../components/configs/firebase-config';
+import axios from 'axios';
 
 interface Template {
   id: string;
@@ -78,20 +79,39 @@ export default function SendMessagePage() {
     }
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     console.log('Message sent:', message);
     console.log('To:', selectedUsers);
     console.log('Template:', selectedTemplate);
     console.log('Title:', messageTitle);
-    
-    // Clear inputs after sending, but keep message content if it's a template
+  
     if (!selectedTemplate) {
       setMessage('');
       setMessageTitle('');
     }
     setSelectedUsers([]);
-  }
-
+    try {
+      for (const userId of selectedUsers) {
+        const userRef = ref(db, `users/${userId}`);
+        const userSnapshot = await get(userRef);
+        const userData = userSnapshot.val();
+        if (userData && userData.MobileToken) {
+          alert('Wiadomość została wysłana do użytkownika z MobileToken');
+        } else {
+          const response = await axios.post('http://localhost:8000/api/send-sms/', {
+            UID: userId,
+            body: message,
+          });
+          console.log(response.data);
+        }
+      }
+    } catch (error) {
+      console.error('Błąd podczas wysyłania wiadomości:', error);
+      alert("Błąd podczas wysyłania wiadomości");
+    }
+  };
+  
+  
   return (
     <View style={styles.container}>
       <Drawer.Screen 

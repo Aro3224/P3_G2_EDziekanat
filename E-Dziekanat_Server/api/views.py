@@ -7,6 +7,7 @@ import firebase_admin
 from firebase_admin import auth
 import json
 import requests
+from twilio.rest import Client
 
 
 # Inicjalizacja aplikacji Firebase
@@ -122,3 +123,43 @@ def edit_user(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
+
+@csrf_exempt
+def send_sms(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        uid = data.get('UID')
+        content = data.get('body')
+        if uid:
+            try:
+                database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
+                # Pobieranie numeru telefonu z bazy danych
+                response = requests.get(f"{database_url}/users/{uid}/NrTelefonu.json")
+                if response.status_code == 200:
+                    nr_telefonu = response.json()
+                    if nr_telefonu:
+                        # Twilio Account SID i Auth Token
+                        account_sid = 'AC177df05c3e58b19b00784c1deb290544'
+                        auth_token = 'ba4574159433e3b46bcec57b7cc0da46'
+                        client = Client(account_sid, auth_token)
+                        
+                        message = client.messages.create(
+                            from_='+13185158091',
+                            body= content,
+                            to='+48' + nr_telefonu
+                        )
+
+                        print(message.sid)
+
+                        return JsonResponse({'message': 'SMS sent successfully', 'UID': uid}, status=200)
+                    else:
+                        return JsonResponse({'error': 'Phone number not found for this user', 'UID': uid}, status=404)
+                else:
+                    return JsonResponse({'error': 'Failed to fetch user phone number in Firebase database'}, status=500)
+
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
+        else:
+            return JsonResponse({'error': 'UID not provided'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
