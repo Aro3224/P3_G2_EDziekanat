@@ -51,28 +51,48 @@ export default function EditUserPage() {
     }, []);
 
     const editUser = async () => {
-        if (textRoleValue != "")
-        {
-            try {
-                const response = await axios.post('http://localhost:8000/api/edit-user/', {
-                    UID: userId,
-                    email: textEmailValue,
-                    password: textPasswordValue,
-                    Imie: textNameValue,
-                    Nazwisko: textSurnameValue,
-                    NrTelefonu: textPhoneValue,
-                    Role: textRoleValue,
-                });
-                console.log(response.data);
-                alert("Dane zostały zaaktualizowane");
-            } catch (error) {
-                console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
-                alert("Wystąpił błąd podczas aktualizacji danych");
+        if (textRoleValue !== "") {
+            if (isPasswordEditable) {
+                if (textPasswordValue.length >= 6) {
+                    try {
+                        const response = await axios.post('http://localhost:8000/api/edit-user/', {
+                            UID: userId,
+                            email: textEmailValue,
+                            password: textPasswordValue,
+                            Imie: textNameValue,
+                            Nazwisko: textSurnameValue,
+                            NrTelefonu: textPhoneValue,
+                            Role: textRoleValue,
+                        });
+                        console.log(response.data);
+                        alert("Dane zostały zaaktualizowane");
+                    } catch (error) {
+                        console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
+                        alert("Wystąpił błąd podczas aktualizacji danych");
+                    }
+                } else {
+                    alert("Hasło jest za krótkie");
+                }
+            } else {
+                try {
+                    const response = await axios.post('http://localhost:8000/api/edit-user/', {
+                        UID: userId,
+                        email: textEmailValue,
+                        Imie: textNameValue,
+                        Nazwisko: textSurnameValue,
+                        NrTelefonu: textPhoneValue,
+                        Role: textRoleValue,
+                    });
+                    console.log(response.data);
+                    alert("Dane zostały zaaktualizowane");
+                } catch (error) {
+                    console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
+                    alert("Wystąpił błąd podczas aktualizacji danych");
+                }
             }
-        }else{
+        } else {
             alert("Wybierz stanowisko pracownika");
         }
-        
     };
 
     if (loading) {
@@ -89,7 +109,7 @@ export default function EditUserPage() {
             setTextPasswordValue("");
             setPlaceHolderValue("Edycja hasła zablokowana");
         }else{
-            setPlaceHolderValue("Wprowadź nowe hasło");
+            setPlaceHolderValue("Wprowadź nowe hasło (co najmniej 6 znaków)");
         }
     };
 
