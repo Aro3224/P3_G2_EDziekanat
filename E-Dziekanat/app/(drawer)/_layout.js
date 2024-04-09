@@ -31,6 +31,14 @@ export default function Layout() {
         }}>
         </Drawer.Screen>
 
+        <Drawer.Screen name='buttons'
+        options={{
+            drawerLabel: "Przyciski",
+            title: "Przyciski",
+            drawerIcon: ({size, color}) => <Ionicons name="apps-outline"  size={size} color={color}/>
+        }}>
+        </Drawer.Screen>
+
         <Drawer.Screen name='history'
         options={{
             drawerLabel: "Historia powiadomień",
