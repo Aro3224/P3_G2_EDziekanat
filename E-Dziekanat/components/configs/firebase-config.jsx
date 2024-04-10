@@ -3,7 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { getMessaging, getToken } from "firebase/messaging";
 import { Platform } from "react-native";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -44,4 +44,4 @@ if (Platform.OS === 'web') {
 // Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);
 
-export { db, auth, messaging };
+export { db, auth, messaging, app, onAuthStateChanged};
