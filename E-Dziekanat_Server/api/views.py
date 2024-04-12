@@ -7,7 +7,7 @@ import firebase_admin
 from firebase_admin import auth
 import json
 import requests
-from twilio.rest import Client
+import vonage
 
 
 # Inicjalizacja aplikacji Firebase
@@ -138,18 +138,22 @@ def send_sms(request):
                 if response.status_code == 200:
                     nr_telefonu = response.json()
                     if nr_telefonu:
-                        # Twilio Account SID i Auth Token
-                        account_sid = 'AC177df05c3e58b19b00784c1deb290544'
-                        auth_token = 'ba4574159433e3b46bcec57b7cc0da46'
-                        client = Client(account_sid, auth_token)
-                        
-                        message = client.messages.create(
-                            from_='+13185158091',
-                            body= content,
-                            to='+48' + nr_telefonu
+                        # Vonage Account SID i Auth Token
+                        client = vonage.Client(key="c5af630b", secret="VrAQHW3cFeD32Pmy")
+                        sms = vonage.Sms(client)
+
+                        responseData = sms.send_message(
+                            {
+                                "from": "E-dziekanat",
+                                "to": '48' + nr_telefonu,
+                                "text": content,
+                            }
                         )
 
-                        print(message.sid)
+                        if responseData["messages"][0]["status"] == "0":
+                            print("Message sent successfully.")
+                        else:
+                            print(f"Message failed with error: {responseData['messages'][0]['error-text']}")
 
                         return JsonResponse({'message': 'SMS sent successfully', 'UID': uid}, status=200)
                     else:
