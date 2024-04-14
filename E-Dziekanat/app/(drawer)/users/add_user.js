@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Button,SafeAreaView, TextInput, Alert } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
@@ -14,6 +14,22 @@ export default function AddUserPage() {
   const [userPass, onChangePass] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passError, setPassError] = useState('');
+  const [userToken, setUserToken] = useState('');
+
+
+
+  useEffect(() => {
+    const auth = getAuth();
+    if (auth.currentUser) {
+      auth.currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+        setUserToken(idToken)
+        console.log(userToken);
+      }).catch(function(error) {
+        console.error('Błąd podczas pobierania tokenu:', error);
+      });
+    }
+  }, []);
+
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,7 +42,7 @@ export default function AddUserPage() {
 
 
 
-  const createUser = async (userEmail, userPass) => {
+  const createUser = async (userEmail, userPass, userToken) => {
 
     setEmailError('');
     setPassError('');
@@ -45,7 +61,13 @@ export default function AddUserPage() {
       const response = await axios.post('http://localhost:8000/api/create-user/', {
         email: userEmail,
         password: userPass,
-      });
+      },
+      {
+        headers: {
+          'Authorization': 'Bearer ' + userToken
+        }
+      }
+    );
       console.log(response.data);
       onChangeEmail("");
       onChangePass("");
@@ -85,7 +107,7 @@ export default function AddUserPage() {
         />
         <Text style={styles.errorText}>{passError}</Text>
       </SafeAreaView>
-      <Button title='Dodaj' onPress={() => createUser(userEmail, userPass)}/>
+      <Button title='Dodaj' onPress={() => createUser(userEmail, userPass, userToken)}/>
     </View>
   );
 }

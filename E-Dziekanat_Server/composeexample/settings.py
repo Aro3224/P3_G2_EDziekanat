@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-x#ha69&+!yj(tfgtyt7c%$c+qjdl&pvccmso6qyk38hj!hu85a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -52,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'FirebaseMiddleware.FirebaseAuthenticationMiddleware'
 ]
 
 ROOT_URLCONF = 'composeexample.urls'
@@ -130,6 +131,9 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True  # Ustaw na True, aby zezwolić na wszystkie domeny
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8081",  # Adres Twojej aplikacji frontendowej
+]
 
 cred = credentials.Certificate('e-dziekanat-4e60f-firebase-adminsdk-t7grn-01e3972a35.json')
 firebase_admin.initialize_app(cred)

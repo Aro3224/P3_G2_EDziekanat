@@ -6,6 +6,8 @@ import { ref, get } from 'firebase/database';
 import { db } from '../../../components/configs/firebase-config';
 import axios from 'axios';
 import { Checkbox } from 'react-native-paper';
+import { getAuth } from "firebase/auth";
+
 
 export default function EditUserPage() {
     const route = useRoute();
@@ -22,6 +24,20 @@ export default function EditUserPage() {
     const [checkedWykladowca, setCheckedWykladowca] = useState(false);
     const [checkedPracownik, setCheckedPracownik] = useState(false);
     const [textRoleValue, setTextRoleValue] = useState("");
+    const [userToken, setUserToken] = useState('');
+
+
+    useEffect(() => {
+        const auth = getAuth();
+        if (auth.currentUser) {
+          auth.currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+            setUserToken(idToken)
+            console.log(userToken);
+          }).catch(function(error) {
+            console.error('Błąd podczas pobierania tokenu:', error);
+          });
+        }
+      }, []);
 
     useEffect(() => {
         const readData = async () => {
@@ -63,6 +79,11 @@ export default function EditUserPage() {
                             Nazwisko: textSurnameValue,
                             NrTelefonu: textPhoneValue,
                             Role: textRoleValue,
+                        },
+                        {
+                          headers: {
+                            'Authorization': 'Bearer ' + userToken
+                          }
                         });
                         console.log(response.data);
                         alert("Dane zostały zaaktualizowane");
@@ -82,6 +103,11 @@ export default function EditUserPage() {
                         Nazwisko: textSurnameValue,
                         NrTelefonu: textPhoneValue,
                         Role: textRoleValue,
+                    },
+                    {
+                      headers: {
+                        'Authorization': 'Bearer ' + userToken
+                      }
                     });
                     console.log(response.data);
                     alert("Dane zostały zaaktualizowane");

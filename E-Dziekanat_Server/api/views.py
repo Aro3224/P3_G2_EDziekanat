@@ -10,10 +10,21 @@ import requests
 import vonage
 
 
-# Inicjalizacja aplikacji Firebase
-# Pamiętaj, aby umieścić plik konfiguracyjny Firebase w odpowiednim miejscu
-# i zaimportować go tutaj przed użyciem Firebase
-# firebase_admin.initialize_app()
+@csrf_exempt
+def verify_token_view(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        token = data.get('token')
+        try:
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token.get('uid')
+            email = decoded_token.get('email')
+            return JsonResponse({'status': 'success', 'user_id': user_id, 'email': email})
+        except auth.InvalidIdTokenError as e:
+            return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy token'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Nieprawidłowe żądanie'})
+    
 
 @csrf_exempt
 def delete_user(request):
@@ -49,21 +60,20 @@ def create_user(request):
         data = json.loads(request.body)
         email = data.get('email')
         password = data.get('password')
+
         if email and password:
             try:
                 user = auth.create_user(email=email, password=password)
                 uid = user.uid
 
-                # Tworzenie dziecka w bazie danych Firebase Realtime Database
                 database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
-                user_data = {"email": email}  # Tutaj możesz dodać więcej danych użytkownika
+                user_data = {"email": email}
                 response = requests.put(f"{database_url}/users/{uid}.json", json=user_data)
 
                 if response.status_code == 200:
                     return JsonResponse({'message': 'User created successfully', 'UID': uid}, status=200)
                 else:
                     return JsonResponse({'error': 'Failed to create user data in Firebase database'}, status=500)
-
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)
         else:

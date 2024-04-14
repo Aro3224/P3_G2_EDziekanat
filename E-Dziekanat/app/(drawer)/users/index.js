@@ -12,6 +12,20 @@ import axios from 'axios';
 export default function UsersPage() {
   
   const [users, setUsers] = useState([]);
+  const [userToken, setUserToken] = useState('');
+
+  useEffect(() => {
+    const auth = getAuth();
+    if (auth.currentUser) {
+      auth.currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+        setUserToken(idToken)
+        console.log(idToken); // Zamiast userToken
+      }).catch(function(error) {
+        console.error('Błąd podczas pobierania tokenu:', error);
+      });
+    }
+  }, []);
+  
 
   useEffect(() => {
     const usersRef = ref(db,'/users');
@@ -42,7 +56,13 @@ export default function UsersPage() {
             try {
               const response = await axios.post('http://localhost:8000/api/delete-user/', {
                 UID: userId,
-              });
+              },
+              {
+                headers: {
+                  'Authorization': 'Bearer ' + userToken
+                }
+              }
+            );
               console.log(response.data);
             } catch (error) {
               console.error('Błąd podczas wysyłania żądania usunięcia użytkownika:', error);
@@ -66,7 +86,13 @@ export default function UsersPage() {
     try {
       const response = await axios.post('http://localhost:8000/api/delete-user/', {
         UID: userId,
-      });
+      },
+      {
+        headers: {
+          'Authorization': 'Bearer ' + userToken
+        }
+      }
+    );
       console.log(response.data);
     } catch (error) {
       console.error('Błąd podczas wysyłania żądania usunięcia użytkownika:', error);
@@ -104,9 +130,6 @@ export default function UsersPage() {
             <Link href={`/(drawer)/users/edit_user?id=${item.id}`}>
               <Text style={styles.editButton}>Edytuj</Text>
             </Link>
-            <TouchableOpacity onPress={() => sendDataToBackend(item.id)}>
-              <Text style={styles.deleteButton}>Wyślij</Text> 
-            </TouchableOpacity>
         </View>
       )}
       keyExtractor={item => item.id}
