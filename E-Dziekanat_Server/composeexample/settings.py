@@ -136,4 +136,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 cred = credentials.Certificate('e-dziekanat-4e60f-firebase-adminsdk-t7grn-01e3972a35.json')
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred, {
+  'databaseURL': 'https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/'
+})
