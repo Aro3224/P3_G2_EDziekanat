@@ -3,7 +3,7 @@ import { Text, View, StyleSheet } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
-import { auth } from '../../../components/configs/firebase-config';
+import { auth, db } from '../../../components/configs/firebase-config'; // Importuj autentykację Firebase
 import { getDatabase, ref, set } from "firebase/database";
 import { getMessaging, getToken } from "firebase/messaging";
 
@@ -30,6 +30,24 @@ export default function HomePage() {
     };
 
     fetchUserData();
+
+    // Dodaj nasłuchiwanie zmiany stanu autoryzacji użytkownika
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // Uzyskaj nowy token web
+        const messaging = getMessaging();
+        const currentToken = await getToken(messaging, { vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk" });
+        if (currentToken) {
+          const db = getDatabase(); // Pobierz referencję do bazy danych
+          await set(ref(db, `users/${user.uid}/webtoken`), currentToken); // Ustaw token web pod odpowiednim kluczem
+        }
+      }
+    });
+
+    return () => {
+      // Odsubskrybuj nasłuchiwanie zmiany stanu autoryzacji użytkownika przy odmontowywaniu komponentu
+      unsubscribe();
+    };
   }, []);
 
   return (
