@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import firebase_admin
-from firebase_admin import auth
+from firebase_admin import auth, messaging
 import json
 import requests
 import vonage
@@ -170,6 +170,41 @@ def send_sms(request):
                         return JsonResponse({'error': 'Phone number not found for this user', 'UID': uid}, status=404)
                 else:
                     return JsonResponse({'error': 'Failed to fetch user phone number in Firebase database'}, status=500)
+
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
+        else:
+            return JsonResponse({'error': 'UID not provided'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+def send_push_notification(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        title = data.get('title')
+        message = data.get('message')
+        registration_token = data.get('registrationToken')
+        if registration_token:
+            try:
+                database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
+                if response.status_code == 200:
+                    webtoken = response.json()
+                    if webtoken:
+                        
+                        message = messaging.Message(
+                        notification=messaging.Notification(title=title, body=message),
+                        token=registration_token,
+                        )
+                        response = messaging.send(message)
+                        print('Powiadomienie wyslane:', response)
+                        print(registration_token, title, message)
+                        
+                        return JsonResponse({'message': 'Message sent successfully', 'UID': uid}, status=200)
+                    else:
+                        return JsonResponse({'error': 'Web Token not found for this user', 'UID': uid}, status=404)
+                else:
+                    return JsonResponse({'error': 'Failed to fetch user Web Token in Firebase database'}, status=500)
 
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)

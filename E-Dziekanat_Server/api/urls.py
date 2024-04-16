@@ -7,4 +7,5 @@ urlpatterns = [
     path('api/create-user/', views.create_user, name='create_user'),
     path('api/edit-user/', views.edit_user, name='edit_user'),
     path('api/send-sms/', views.send_sms, name='send_sms'),
+    path('api/send-push-notification/', views.send_push_notification, name='send_push_notification'),
 ]

@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-nativ
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { ref, onValue, get } from "firebase/database";
+import { getAuth } from "firebase/auth";
 import { db } from '../../../components/configs/firebase-config';
 import axios from 'axios';
 
@@ -20,6 +21,20 @@ export default function SendMessagePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [messageTitle, setMessageTitle] = useState('');
+
+  const [userToken, setUserToken] = useState('');
+
+  useEffect(() => {
+    const auth = getAuth();
+    if (auth.currentUser) {
+      auth.currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+        setUserToken(idToken)
+        console.log(userToken);
+      }).catch(function(error) {
+        console.error('Błąd podczas pobierania tokenu:', error);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     // Load users from Firebase
@@ -79,12 +94,12 @@ export default function SendMessagePage() {
     }
   };
 
-  const sendMessage = async () => {
+  const sendMessage = async (userToken:string) => {
     console.log('Message sent:', message);
     console.log('To:', selectedUsers);
     console.log('Template:', selectedTemplate);
     console.log('Title:', messageTitle);
-  
+
     if (!selectedTemplate) {
       setMessage('');
       setMessageTitle('');
@@ -95,12 +110,16 @@ export default function SendMessagePage() {
         const userRef = ref(db, `users/${userId}`);
         const userSnapshot = await get(userRef);
         const userData = userSnapshot.val();
-        if (userData && userData.MobileToken) {
-          // Send push notification using Firebase
+        if (userData && userData.webtoken) {
+           //Send push notification using Firebase
           const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
-            registrationToken: userData.MobileToken,
+            registrationToken: userData.webtoken,
             title: selectedTemplate?.title || messageTitle,
             message,
+          }, {
+            headers: {
+              'Authorization': 'Bearer ' + userToken
+            }
           });
           console.log(response.data);
         } else {
@@ -117,15 +136,16 @@ export default function SendMessagePage() {
       alert("Błąd podczas wysyłania wiadomości");
     }
   };
-  
-  
+
+
   return (
     <View style={styles.container}>
-      <Drawer.Screen 
-        options={{ 
-          title:"Wyślij wiadomość", 
-          headerShown: true, 
-          headerLeft: ()=> <DrawerToggleButton/>}} />
+      <Drawer.Screen
+        options={{
+          title: "Wyślij wiadomość",
+          headerShown: true,
+          headerLeft: () => <DrawerToggleButton />
+        }} />
       <Text style={styles.subtitle}>Wyślij wiadomość</Text>
 
       <View style={styles.upperPanelContainer}>
@@ -193,7 +213,7 @@ export default function SendMessagePage() {
           onChangeText={setMessage}
           editable={selectedTemplate === null}
         />
-        <TouchableOpacity style={styles.button} onPress={sendMessage}>
+        <TouchableOpacity style={styles.button} onPress={()=>sendMessage(userToken)}>
           <Text style={styles.buttonText}>Wyślij</Text>
         </TouchableOpacity>
       </View>
@@ -291,7 +311,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    backgroundColor: "#007bff", 
+    backgroundColor: "#007bff",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -299,10 +319,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: "#fff", 
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
 });
 
-export {};
+export { };
