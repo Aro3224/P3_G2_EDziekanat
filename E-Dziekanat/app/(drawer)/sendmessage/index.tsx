@@ -27,10 +27,10 @@ export default function SendMessagePage() {
   useEffect(() => {
     const auth = getAuth();
     if (auth.currentUser) {
-      auth.currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+      auth.currentUser.getIdToken(/* forceRefresh */ true).then(function (idToken) {
         setUserToken(idToken)
         console.log(userToken);
-      }).catch(function(error) {
+      }).catch(function (error) {
         console.error('Błąd podczas pobierania tokenu:', error);
       });
     }
@@ -94,7 +94,7 @@ export default function SendMessagePage() {
     }
   };
 
-  const sendMessage = async (userToken:string) => {
+  const sendMessage = async (userToken: string) => {
     console.log('Message sent:', message);
     console.log('To:', selectedUsers);
     console.log('Template:', selectedTemplate);
@@ -110,12 +110,12 @@ export default function SendMessagePage() {
         const userRef = ref(db, `users/${userId}`);
         const userSnapshot = await get(userRef);
         const userData = userSnapshot.val();
-        if (userData && userData.webtoken) {
-           //Send push notification using Firebase
+        if (userData && userData.mobtoken) {
+          //Send push notification using Firebase
           const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
-            registrationToken: userData.webtoken,
+            registrationToken: userData.mobtoken,
             title: selectedTemplate?.title || messageTitle,
-            message,
+            message, UID: userId,
           }, {
             headers: {
               'Authorization': 'Bearer ' + userToken
@@ -213,7 +213,7 @@ export default function SendMessagePage() {
           onChangeText={setMessage}
           editable={selectedTemplate === null}
         />
-        <TouchableOpacity style={styles.button} onPress={()=>sendMessage(userToken)}>
+        <TouchableOpacity style={styles.button} onPress={() => sendMessage(userToken)}>
           <Text style={styles.buttonText}>Wyślij</Text>
         </TouchableOpacity>
       </View>

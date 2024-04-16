@@ -185,6 +185,8 @@ def send_push_notification(request):
         title = data.get('title')
         message = data.get('message')
         registration_token = data.get('registrationToken')
+        uid = data.get('UID')
+
         if registration_token:
             try:
                 message = messaging.Message(
@@ -194,6 +196,8 @@ def send_push_notification(request):
                 response = messaging.send(message)
                 print('Powiadomienie wyslane:', response)
                 print(registration_token, title, message)
+
+                #dodawanie do bazy message
                         
                 return JsonResponse({'message': 'Message sent successfully', 'FCMToken': registration_token}, status=200)
             except Exception as e:
