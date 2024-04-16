@@ -10,7 +10,6 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 // colors
 const { brand, darkLight } = Colors;
 
-// Pozostała część Twojego kodu z login.tsx bez zmian
 
 const Login: React.FC<{ onLoginSuccess: () => void }> = (props) => {
     const [hidePassword, setHidePassword] = useState<boolean>(true);
