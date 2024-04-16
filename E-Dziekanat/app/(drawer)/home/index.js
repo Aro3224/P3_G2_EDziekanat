@@ -6,6 +6,7 @@ import { Link } from 'expo-router';
 import { auth, db } from '../../../components/configs/firebase-config'; // Importuj autentykację Firebase
 import { getDatabase, ref, set } from "firebase/database";
 import { getMessaging, getToken } from "firebase/messaging";
+import Timer from '../../../components/timer';
 
 export default function HomePage() {
   const [userEmail, setUserEmail] = useState(null);
@@ -52,6 +53,7 @@ export default function HomePage() {
 
   return (
     <View style={styles.container}>
+      <Timer />
       <Drawer.Screen 
       options={{ 
         title:"Strona główna", 
