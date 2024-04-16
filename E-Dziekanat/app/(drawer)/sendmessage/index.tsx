@@ -110,10 +110,10 @@ export default function SendMessagePage() {
         const userRef = ref(db, `users/${userId}`);
         const userSnapshot = await get(userRef);
         const userData = userSnapshot.val();
-        if (userData && userData.mobtoken) {
+        if (userData && userData.webtoken) {
           //Send push notification using Firebase
           const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
-            registrationToken: userData.mobtoken,
+            registrationToken: userData.webtoken,
             title: selectedTemplate?.title || messageTitle,
             message, UID: userId,
           }, {

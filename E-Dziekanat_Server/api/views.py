@@ -4,7 +4,8 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import firebase_admin
-from firebase_admin import auth, messaging
+from firebase_admin import auth, messaging, db
+import time
 import json
 import requests
 import vonage
@@ -183,23 +184,38 @@ def send_push_notification(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         title = data.get('title')
-        message = data.get('message')
+        message_body = data.get('message')
         registration_token = data.get('registrationToken')
         uid = data.get('UID')
 
         if registration_token:
             try:
+                # Wysyłanie powiadomienia
                 message = messaging.Message(
-                notification=messaging.Notification(title=title, body=message),
-                token=registration_token,
+                    notification=messaging.Notification(title=title, body=message_body),
+                    token=registration_token,
                 )
                 response = messaging.send(message)
-                print('Powiadomienie wyslane:', response)
+                print('Powiadomienie wysłane:', response)
                 print(registration_token, title, message)
 
-                #dodawanie do bazy message
-                        
-                return JsonResponse({'message': 'Message sent successfully', 'FCMToken': registration_token}, status=200)
+                # Generowanie znacznika czasu na serwerze
+                timestamp = int(time.time() * 1000)  # Przekształć znacznik czasu w milisekundy
+
+                # Zapisywanie powiadomienia w bazie danych Firebase Realtime Database
+                database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
+                notification_data = {
+                    'tytul': title,
+                    'tresc': message_body,
+                    'czas': timestamp,
+                    'odczytano': False  # Dodanie zmiennej boolowskiej o nazwie "odczytano" ustawionej na False
+                }
+                response = requests.post(f"{database_url}/notifications/{uid}.json", json=notification_data)
+
+                if response.status_code == 200:
+                    return JsonResponse({'message': 'Message sent successfully', 'FCMToken': registration_token}, status=200)
+                else:
+                    return JsonResponse({'error': 'Failed to save notification data in Firebase database'}, status=500)
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)
         else:
