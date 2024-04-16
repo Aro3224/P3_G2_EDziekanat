@@ -96,8 +96,15 @@ export default function SendMessagePage() {
         const userSnapshot = await get(userRef);
         const userData = userSnapshot.val();
         if (userData && userData.MobileToken) {
-          alert('Wiadomość została wysłana do użytkownika z MobileToken');
+          // Send push notification using Firebase
+          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
+            registrationToken: userData.MobileToken,
+            title: selectedTemplate?.title || messageTitle,
+            message,
+          });
+          console.log(response.data);
         } else {
+          // Send SMS as a fallback
           const response = await axios.post('http://localhost:8000/api/send-sms/', {
             UID: userId,
             body: message,
