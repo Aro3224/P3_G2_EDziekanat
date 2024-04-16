@@ -187,28 +187,18 @@ def send_push_notification(request):
         registration_token = data.get('registrationToken')
         if registration_token:
             try:
-                database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
-                if response.status_code == 200:
-                    webtoken = response.json()
-                    if webtoken:
+                message = messaging.Message(
+                notification=messaging.Notification(title=title, body=message),
+                token=registration_token,
+                )
+                response = messaging.send(message)
+                print('Powiadomienie wyslane:', response)
+                print(registration_token, title, message)
                         
-                        message = messaging.Message(
-                        notification=messaging.Notification(title=title, body=message),
-                        token=registration_token,
-                        )
-                        response = messaging.send(message)
-                        print('Powiadomienie wyslane:', response)
-                        print(registration_token, title, message)
-                        
-                        return JsonResponse({'message': 'Message sent successfully', 'UID': uid}, status=200)
-                    else:
-                        return JsonResponse({'error': 'Web Token not found for this user', 'UID': uid}, status=404)
-                else:
-                    return JsonResponse({'error': 'Failed to fetch user Web Token in Firebase database'}, status=500)
-
+                return JsonResponse({'message': 'Message sent successfully', 'FCMToken': registration_token}, status=200)
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)
         else:
-            return JsonResponse({'error': 'UID not provided'}, status=400)
+            return JsonResponse({'error': 'Registration token not provided'}, status=400)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
