@@ -115,14 +115,15 @@ export default function SendMessagePage() {
           const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
             registrationToken: userData.webtoken,
             title: selectedTemplate?.title || messageTitle,
-            message, UID: userId,
+            message: message, 
+            UID: userId,
           }, {
             headers: {
               'Authorization': 'Bearer ' + userToken
             }
           });
           console.log(response.data);
-        } else {
+        } else if(userData && userData.SendSMS == true) {
           // Send SMS as a fallback
           const response = await axios.post('http://localhost:8000/api/send-sms/', {
             UID: userId,
