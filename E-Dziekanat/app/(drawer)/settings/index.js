@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Redirect, Link } from 'expo-router';
@@ -92,11 +92,14 @@ export default function SettingsPage({ navigation }) {
                     onPress={() => handleSMSCheckbox('true')}
                 />
             </View>
-        <Button
-          onPress={handleLogout}
-          title="Wyloguj"
-          color="#CC0000"
-        />
+        <Link href={`/(drawer)/settings/edit_account?id=${userId}`} asChild style={styles.button}>
+          <Pressable>
+            <Text style={styles.buttonText}>Edytuj swoje dane</Text>
+          </Pressable>
+        </Link>
+        <TouchableOpacity style={styles.buttonLogOut} onPress={handleLogout}>
+          <Text style={styles.buttonText}>Wyloguj</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -128,8 +131,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  editButton: {
-    color: 'blue',
-    borderBlockColor: 'blue'
+  button: {
+    backgroundColor: "#007bff", 
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginVertical: 10,
+    marginBottom: 10,
+  },
+  buttonLogOut: {
+    backgroundColor: "#CC0000", 
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginVertical: 10,
+  },
+  buttonText: {
+    color: "#fff", 
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
