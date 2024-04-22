@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, FlatList ,TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
@@ -7,10 +7,12 @@ import { auth, db } from '../../../components/configs/firebase-config'; // Impor
 import { getDatabase, ref, set, query, orderByChild, equalTo, onValue } from "firebase/database";
 import { getMessaging, getToken } from "firebase/messaging";
 import Timer from '../../../components/timer';
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomePage() {
   const [userEmail, setUserEmail] = useState(null);
   const [unreadNotifications, setUnreadNotifications] = useState([]);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -80,7 +82,7 @@ export default function HomePage() {
         console.error('Error fetching unread notifications:', error);
       }
     };
-    
+
 
     fetchUnreadNotifications();
   }, []);
@@ -101,7 +103,10 @@ export default function HomePage() {
           renderItem={({ item }) => (
             <View style={styles.notificationItem}>
               <Text style={styles.notificationTitle}>{item.tytul}</Text>
-              <Link href={`/(drawer)/home/nextpage?id=${item.id}`}>
+              <Link
+                href={`/(drawer)/home/nextpage?id=${item.id}`}
+                onPress={() => navigation.navigate('nextpage', { notificationContent: item.tresc })}
+              >
                 <Text style={styles.openButton}>Otwórz</Text>
               </Link>
             </View>
@@ -109,9 +114,6 @@ export default function HomePage() {
           keyExtractor={(item, index) => index.toString()}
         />
       </View>
-      <Link href={"/(drawer)/home/nextpage"}>
-        <Text>Przejdź do podstrony</Text>
-      </Link>
     </View>
   );
 }
