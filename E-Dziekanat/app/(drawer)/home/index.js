@@ -66,9 +66,11 @@ export default function HomePage() {
             if (unreadNotificationsData) {
               const unreadNotificationsArray = [];
               Object.keys(unreadNotificationsData).forEach(notificationId => {
+                const czasOtrzymania = new Date(unreadNotificationsData[notificationId].czas).toLocaleString(); // Formatuj czas na datę i godzinę
                 const notification = {
                   id: notificationId,
-                  ...unreadNotificationsData[notificationId]
+                  ...unreadNotificationsData[notificationId],
+                  czas: czasOtrzymania
                 };
                 unreadNotificationsArray.push(notification);
               });
@@ -103,6 +105,7 @@ export default function HomePage() {
           renderItem={({ item }) => (
             <View style={styles.notificationItem}>
               <Text style={styles.notificationTitle}>{item.tytul}</Text>
+              <Text style={styles.notificationTime}>{item.czas}</Text>
               <Link
                 href={`/(drawer)/home/nextpage?id=${item.id}`}
                 onPress={() => navigation.navigate('nextpage', { notificationContent: item.tresc })}
