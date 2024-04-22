@@ -3,7 +3,7 @@ import { Text, View, StyleSheet } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { db } from '../../../components/configs/firebase-config';
-import { ref, get, child } from "firebase/database";
+import { ref, get, child, set } from "firebase/database";
 import { useRoute } from '@react-navigation/native';
 import { auth } from '../../../components/configs/firebase-config';
 
@@ -42,8 +42,18 @@ export default function NextPage() {
       }
     };
 
+    const updateReadStatus = async () => {
+      try {
+        const dbRef = ref(db, `notifications/${auth.currentUser.uid}/${notificationId}`);
+        await set(child(dbRef, 'odczytano'), true);
+      } catch (error) {
+        console.error('Błąd podczas aktualizacji statusu odczytania powiadomienia:', error);
+      }
+    };
+
     fetchNotificationContent();
     fetchNotificationTitle();
+    updateReadStatus();
   }, [notificationId]);
 
   return (
