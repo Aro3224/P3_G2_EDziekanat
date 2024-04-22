@@ -4,12 +4,13 @@ import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
 import { auth, db } from '../../../components/configs/firebase-config'; // Importuj autentykację Firebase
-import { getDatabase, ref, set } from "firebase/database";
+import { getDatabase, ref, set, query, orderByChild, equalTo, onValue } from "firebase/database";
 import { getMessaging, getToken } from "firebase/messaging";
 import Timer from '../../../components/timer';
 
 export default function HomePage() {
   const [userEmail, setUserEmail] = useState(null);
+  const [unreadNotifications, setUnreadNotifications] = useState([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -51,6 +52,31 @@ export default function HomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    const fetchUnreadNotifications = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const dbRef = ref(db, `notifications/${user.uid}/`);
+          const unreadNotificationsQuery = query(dbRef, orderByChild('odczytano'), equalTo(false));
+          onValue(unreadNotificationsQuery, (snapshot) => {
+            const unreadNotificationsData = snapshot.val();
+            if (unreadNotificationsData) {
+              const unreadNotificationsArray = Object.values(unreadNotificationsData);
+              setUnreadNotifications(unreadNotificationsArray);
+            } else {
+              setUnreadNotifications([]);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching unread notifications:', error);
+      }
+    };
+
+    fetchUnreadNotifications();
+  }, []);
+
   return (
     <View style={styles.container}>
       <Timer />
@@ -60,11 +86,20 @@ export default function HomePage() {
         headerShown: true, 
         headerLeft: ()=> <DrawerToggleButton/>}} />
       <Text>{`Witaj ${userEmail || ''}`}</Text>
-      <Text>Tutaj pojawią się nieprzeczytane powiadomienia</Text>
+      <View style={styles.notificationContainer}>
+        <View style={styles.notificationFrame}>
+          {unreadNotifications.map((notification, index) => (
+            <View key={index} style={styles.notificationItem}>
+              <Text style={styles.notificationTitle}>{notification.tytul}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
       <Link href={"/(drawer)/home/nextpage"}>
         <Text>Przejdź do podstrony</Text>
       </Link>
-    </View>);
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -73,5 +108,26 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-  }
-})
+  },
+  notificationContainer: {
+    marginTop: 20,
+    alignItems: "center",
+  },
+  notificationFrame: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+  },
+  notificationItem: {
+    backgroundColor: "#eee",
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
