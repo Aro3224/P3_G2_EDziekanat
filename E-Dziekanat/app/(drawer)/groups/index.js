@@ -4,19 +4,27 @@ import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link, Redirect } from 'expo-router';
 import { db } from '../../../components/configs/firebase-config';
-import { ref, onValue, remove } from "firebase/database";
+import { ref, onValue, remove, get } from "firebase/database";
 
 export default function GroupPage() {
   const [groups, setGroups] = useState([]);
 
   useEffect(() => {
     const groupsRef = ref(db, '/groups');
-    onValue(groupsRef, (snapshot) => {
+    onValue(groupsRef, async (snapshot) => {
       const groupsData = snapshot.val();
       if (groupsData) {
-        const groupsArray = Object.keys(groupsData).map(key => ({
-          id: key,
-          users: groupsData[key].Users || []
+        const groupsArray = await Promise.all(Object.keys(groupsData).map(async key => {
+          const users = groupsData[key].Users || [];
+          const usersDetails = await Promise.all(users.map(async userID => {
+            const userSnapshot = await get(ref(db, `users/${userID}`));
+            const userData = userSnapshot.val();
+            return `${userData.Imie} ${userData.Nazwisko}`;
+          }));
+          return {
+            id: key,
+            users: usersDetails
+          };
         }));
         setGroups(groupsArray);
       }
@@ -25,50 +33,49 @@ export default function GroupPage() {
   }, []);
 
   const handleDeleteGroup = (groupId) => {
-  Alert.alert(
-    'Potwierdzenie',
-    'Czy na pewno chcesz usunąć tę grupę?',
-    [
-      { text: 'Anuluj', style: 'cancel' },
-      {
-        text: 'Usuń',
-        onPress: async () => {
-          try {
-            await remove(ref(db, `/groups/${groupId}`));
-            console.log('Grupa została usunięta z bazy danych.');
-            setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
-          } catch (error) {
-            console.error('Błąd podczas usuwania grupy:', error);
-            Alert.alert('Błąd', 'Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
-          }
+    Alert.alert(
+      'Potwierdzenie',
+      'Czy na pewno chcesz usunąć tę grupę?',
+      [
+        { text: 'Anuluj', style: 'cancel' },
+        {
+          text: 'Usuń',
+          onPress: async () => {
+            try {
+              await remove(ref(db, `/groups/${groupId}`));
+              console.log('Grupa została usunięta z bazy danych.');
+              setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+            } catch (error) {
+              console.error('Błąd podczas usuwania grupy:', error);
+              Alert.alert('Błąd', 'Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
+            }
+          },
         },
-      },
-    ],
-    { cancelable: false }
-  );
-};
+      ],
+      { cancelable: false }
+    );
+  };
 
-const handleDeleteGroupWeb = (groupId) => {
-  const confirmation = window.confirm('Czy na pewno chcesz usunąć tę grupę?');
-  
-  if (confirmation) {
-    try {
-      remove(ref(db, `/groups/${groupId}`))
-        .then(() => {
-          console.log('Grupa została usunięty z bazy danych.');
-          setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
-        })
-        .catch((error) => {
-          console.error('Błąd podczas usuwania grupy:', error);
-          alert('Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
-        });
-    } catch (error) {
-      console.error('Błąd podczas usuwania grupy:', error);
-      alert('Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
+  const handleDeleteGroupWeb = (groupId) => {
+    const confirmation = window.confirm('Czy na pewno chcesz usunąć tę grupę?');
+    
+    if (confirmation) {
+      try {
+        remove(ref(db, `/groups/${groupId}`))
+          .then(() => {
+            console.log('Grupa została usunięty z bazy danych.');
+            setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+          })
+          .catch((error) => {
+            console.error('Błąd podczas usuwania grupy:', error);
+            alert('Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
+          });
+      } catch (error) {
+        console.error('Błąd podczas usuwania grupy:', error);
+        alert('Wystąpił błąd podczas usuwania grupy. Spróbuj ponownie później.');
+      }
     }
-  }
-};
-
+  };
 
   return (
     <>
@@ -95,11 +102,11 @@ const handleDeleteGroupWeb = (groupId) => {
               <Text>Nazwa: {item.id}</Text>
               <Text>Członkowie: {item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
               <TouchableOpacity onPress={() => {Platform.OS == "web"?handleDeleteGroupWeb(item.id):handleDeleteGroup(item.id)}}>
-              <Text style={styles.deleteButton}>Usuń</Text>
-            </TouchableOpacity>
-            <Link href={`/(drawer)/groups/edit_group?id=${item.id}`}>
-              <Text style={styles.editButton}>Edytuj</Text>
-            </Link>
+                <Text style={styles.deleteButton}>Usuń</Text>
+              </TouchableOpacity>
+              <Link href={`/(drawer)/groups/edit_group?id=${item.id}`}>
+                <Text style={styles.editButton}>Edytuj</Text>
+              </Link>
             </View>
           )}
           keyExtractor={item => item.id}

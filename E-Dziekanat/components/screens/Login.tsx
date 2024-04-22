@@ -32,7 +32,7 @@ const Login: React.FC<{ onLoginSuccess: () => void }> = (props) => {
 
     return (
         <StyledContainer>
-            <StatusBar style="dark" />
+            <StatusBar style="dark"/>
             <InnerContainer>
                 <PageTitle>E-Dziekanat</PageTitle>
                 <SubTitle>Logowanie</SubTitle>

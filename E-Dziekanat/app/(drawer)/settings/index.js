@@ -29,7 +29,7 @@ export default function SettingsPage({ navigation }) {
           const userData = snapshot.val();
           setUserName(userData?.Imie || '');
           setUserSurname(userData?.Nazwisko || '');
-          setCheckedSMS(userData?.SendSMS || false); // Aktualizacja stanu checkboxa na podstawie wartości z bazy danych
+          setCheckedSMS(userData?.SendSMS || false);
         }
         if (user) {
           setUserEmail(user.email);
