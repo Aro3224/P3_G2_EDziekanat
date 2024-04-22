@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, FlatList ,TouchableOpacity } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
@@ -80,20 +80,26 @@ export default function HomePage() {
   return (
     <View style={styles.container}>
       <Timer />
-      <Drawer.Screen 
-      options={{ 
-        title:"Strona główna", 
-        headerShown: true, 
-        headerLeft: ()=> <DrawerToggleButton/>}} />
+      <Drawer.Screen
+        options={{
+          title: "Strona główna",
+          headerShown: true,
+          headerLeft: () => <DrawerToggleButton />
+        }} />
       <Text>{`Witaj ${userEmail || ''}`}</Text>
       <View style={styles.notificationContainer}>
-        <View style={styles.notificationFrame}>
-          {unreadNotifications.map((notification, index) => (
-            <View key={index} style={styles.notificationItem}>
-              <Text style={styles.notificationTitle}>{notification.tytul}</Text>
+        <FlatList
+          data={unreadNotifications}
+          renderItem={({ item }) => (
+            <View style={styles.notificationItem}>
+              <Text style={styles.notificationTitle}>{item.tytul}</Text>
+              <Link href={`/(drawer)/home/nextpage?id=${item.id}`}>
+                <Text style={styles.openButton}>Otwórz</Text>
+              </Link>
             </View>
-          ))}
-        </View>
+          )}
+          keyExtractor={(item, index) => index.toString()}
+        />
       </View>
       <Link href={"/(drawer)/home/nextpage"}>
         <Text>Przejdź do podstrony</Text>
