@@ -62,7 +62,14 @@ export default function HomePage() {
           onValue(unreadNotificationsQuery, (snapshot) => {
             const unreadNotificationsData = snapshot.val();
             if (unreadNotificationsData) {
-              const unreadNotificationsArray = Object.values(unreadNotificationsData);
+              const unreadNotificationsArray = [];
+              Object.keys(unreadNotificationsData).forEach(notificationId => {
+                const notification = {
+                  id: notificationId,
+                  ...unreadNotificationsData[notificationId]
+                };
+                unreadNotificationsArray.push(notification);
+              });
               setUnreadNotifications(unreadNotificationsArray);
             } else {
               setUnreadNotifications([]);
@@ -73,6 +80,7 @@ export default function HomePage() {
         console.error('Error fetching unread notifications:', error);
       }
     };
+    
 
     fetchUnreadNotifications();
   }, []);
