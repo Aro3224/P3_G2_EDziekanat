@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, FlatList } from 'react-native';
+import { Text, View, StyleSheet, FlatList, Platform } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
-import { auth, db } from '../../../components/configs/firebase-config'; // Importuj autentykację Firebase
+import { auth, db } from '../../../components/configs/firebase-config';
 import { getDatabase, ref, set, query, orderByChild, equalTo, onValue } from "firebase/database";
 import { getMessaging, getToken } from "firebase/messaging";
 import Timer from '../../../components/timer';
 import { useNavigation } from '@react-navigation/native';
+import messaging from '@react-native-firebase/messaging';
 
 export default function HomePage() {
   const [userEmail, setUserEmail] = useState(null);
@@ -32,10 +33,10 @@ export default function HomePage() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         // Uzyskaj nowy token
-        if (isMobile()) {
-          await handleMobileToken(user);
-        } else {
+        if (Platform.OS === 'web') {
           await handleWebToken(user);
+        } else {
+          await handleMobileToken(user);
         }
       }
     });
@@ -99,15 +100,6 @@ export default function HomePage() {
       const db = getDatabase(); // Pobierz referencję do bazy danych
       await set(ref(db, `users/${user.uid}/webtoken`), currentToken); // Ustaw token web pod odpowiednim kluczem
     }
-  };
-
-  const isMobile = () => {
-    // Sprawdź, czy navigator jest zdefiniowany, aby uniknąć błędów
-    if (typeof navigator !== 'undefined') {
-      // Sprawdź, czy użytkownik korzysta z urządzenia mobilnego na podstawie User Agent
-      return /Mobi|Android/i.test(navigator.userAgent);
-    }
-    return false;
   };
 
   const requestUserPermission = async () => {
