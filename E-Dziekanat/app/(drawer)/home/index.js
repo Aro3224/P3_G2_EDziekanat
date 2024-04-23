@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, FlatList } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
@@ -20,30 +20,6 @@ export default function HomePage() {
         const user = auth.currentUser;
         if (user) {
           setUserEmail(user.email);
-          let isMobile = false; // Zmienna do przechowywania informacji o tym, czy użytkownik korzysta z urządzenia mobilnego
-    
-          // Sprawdź, czy użytkownik korzysta z urządzenia mobilnego na podstawie User Agent
-          if (/Mobi|Android/i.test(navigator.userAgent)) {
-            isMobile = true;
-          }
-    
-          const messaging = getMessaging();
-    
-          // Jeśli użytkownik korzysta z urządzenia mobilnego, uzyskaj token mobilny i zapisz go
-          if (isMobile) {
-            const currentMobToken = await getToken(messaging);
-            if (currentMobToken) {
-              const db = getDatabase();
-              await set(ref(db, `users/${user.uid}/mobtoken`), currentMobToken);
-            }
-          } else {
-            // Uzyskaj token webowy i zapisz go
-            const currentWebToken = await getToken(messaging, { vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk" });
-            if (currentWebToken) {
-              const db = getDatabase();
-              await set(ref(db, `users/${user.uid}/webtoken`), currentWebToken);
-            }
-          }
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -105,6 +81,41 @@ export default function HomePage() {
 
     fetchUnreadNotifications();
   }, []);
+
+  useEffect(() => {
+    const registerToken = async () => {
+      const permissionGranted = await requestUserPermission();
+      
+      if (permissionGranted) {
+        // Pobierz token urządzenia
+        const token = await messaging().getToken();
+        
+        // Zapisz token do bazy danych Firebase
+        const db = getDatabase();
+        const user = auth.currentUser;
+        if (user) {
+          await set(ref(db, `users/${user.uid}/mobtoken`), token);
+        }
+      } else {
+        console.log("User denied permission for notifications.");
+      }
+    };
+
+    registerToken();
+
+  }, []);
+
+  const requestUserPermission = async () => {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+  
+    if (enabled) {
+      console.log('Authorization status:', authStatus);
+    }
+    return enabled; // Return permission status
+  }
 
   return (
     <View style={styles.container}>
