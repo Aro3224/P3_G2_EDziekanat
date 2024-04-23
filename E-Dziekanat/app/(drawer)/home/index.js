@@ -31,12 +31,11 @@ export default function HomePage() {
     // Dodaj nasłuchiwanie zmiany stanu autoryzacji użytkownika
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // Uzyskaj nowy token web
-        const messaging = getMessaging();
-        const currentToken = await getToken(messaging, { vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk" });
-        if (currentToken) {
-          const db = getDatabase(); // Pobierz referencję do bazy danych
-          await set(ref(db, `users/${user.uid}/webtoken`), currentToken); // Ustaw token web pod odpowiednim kluczem
+        // Uzyskaj nowy token
+        if (isMobile()) {
+          await handleMobileToken(user);
+        } else {
+          await handleWebToken(user);
         }
       }
     });
@@ -82,28 +81,34 @@ export default function HomePage() {
     fetchUnreadNotifications();
   }, []);
 
-  useEffect(() => {
-    const registerToken = async () => {
-      const permissionGranted = await requestUserPermission();
-      
-      if (permissionGranted) {
-        // Pobierz token urządzenia
-        const token = await messaging().getToken();
-        
-        // Zapisz token do bazy danych Firebase
-        const db = getDatabase();
-        const user = auth.currentUser;
-        if (user) {
-          await set(ref(db, `users/${user.uid}/mobtoken`), token);
-        }
-      } else {
-        console.log("User denied permission for notifications.");
-      }
-    };
+  const handleMobileToken = async (user) => {
+    const permissionGranted = await requestUserPermission();
+    if (permissionGranted) {
+      const token = await messaging().getToken();
+      const db = getDatabase();
+      await set(ref(db, `users/${user.uid}/mobtoken`), token);
+    } else {
+      console.log("User denied permission for notifications.");
+    }
+  };
 
-    registerToken();
+  const handleWebToken = async (user) => {
+    const messaging = getMessaging();
+    const currentToken = await getToken(messaging, { vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk" });
+    if (currentToken) {
+      const db = getDatabase(); // Pobierz referencję do bazy danych
+      await set(ref(db, `users/${user.uid}/webtoken`), currentToken); // Ustaw token web pod odpowiednim kluczem
+    }
+  };
 
-  }, []);
+  const isMobile = () => {
+    // Sprawdź, czy navigator jest zdefiniowany, aby uniknąć błędów
+    if (typeof navigator !== 'undefined') {
+      // Sprawdź, czy użytkownik korzysta z urządzenia mobilnego na podstawie User Agent
+      return /Mobi|Android/i.test(navigator.userAgent);
+    }
+    return false;
+  };
 
   const requestUserPermission = async () => {
     const authStatus = await messaging().requestPermission();
@@ -115,7 +120,7 @@ export default function HomePage() {
       console.log('Authorization status:', authStatus);
     }
     return enabled; // Return permission status
-  }
+  };
 
   return (
     <View style={styles.container}>
