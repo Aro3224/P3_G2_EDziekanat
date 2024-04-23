@@ -20,19 +20,36 @@ export default function HomePage() {
         const user = auth.currentUser;
         if (user) {
           setUserEmail(user.email);
-          // Zapisz token web do bazy danych Firebase
+          let isMobile = false; // Zmienna do przechowywania informacji o tym, czy użytkownik korzysta z urządzenia mobilnego
+    
+          // Sprawdź, czy użytkownik korzysta z urządzenia mobilnego na podstawie User Agent
+          if (/Mobi|Android/i.test(navigator.userAgent)) {
+            isMobile = true;
+          }
+    
           const messaging = getMessaging();
-          const currentToken = await getToken(messaging, { vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk" });
-          if (currentToken) {
-            const db = getDatabase(); // Pobierz referencję do bazy danych
-            await set(ref(db, `users/${user.uid}/webtoken`), currentToken); // Ustaw token web pod odpowiednim kluczem
+    
+          // Jeśli użytkownik korzysta z urządzenia mobilnego, uzyskaj token mobilny i zapisz go
+          if (isMobile) {
+            const currentMobToken = await getToken(messaging);
+            if (currentMobToken) {
+              const db = getDatabase();
+              await set(ref(db, `users/${user.uid}/mobtoken`), currentMobToken);
+            }
+          } else {
+            // Uzyskaj token webowy i zapisz go
+            const currentWebToken = await getToken(messaging, { vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk" });
+            if (currentWebToken) {
+              const db = getDatabase();
+              await set(ref(db, `users/${user.uid}/webtoken`), currentWebToken);
+            }
           }
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
       }
     };
-
+    
     fetchUserData();
 
     // Dodaj nasłuchiwanie zmiany stanu autoryzacji użytkownika

@@ -97,7 +97,8 @@ const MyTextInput: React.FC<MyTextInputProps & React.ComponentProps<typeof Style
     ...props
 }) => {
     return (
-        <View>
+        /*<View>*/
+        <View style={{ marginBottom: 80}}>
             <LeftIcon>
                 {icon === 'mail' && <Octicons name="mail" size={30} color={brand} />}
                 {icon === 'lock' && <Octicons name="lock" size={30} color={brand} />}
