@@ -80,6 +80,11 @@ export default function HistoryPage() {
     fetchNotifications();
   }, [isAdmin]);
 
+  const toggleSortOrder = () => {
+    setSortDescending(!sortDescending);
+  };
+  
+
   const renderNotificationItem = ({ item }) => {
     const notificationDate = new Date(item.czas).toLocaleString();
 
@@ -104,6 +109,12 @@ export default function HistoryPage() {
           headerLeft: ()=> <DrawerToggleButton/>}} />
       
       <Text style={styles.title}>Lista powiadomień:</Text>
+      <View style={styles.filters}>
+        <Button
+          title={sortDescending ? 'Od najstarszych' : 'Od najnowszych'}
+          onPress={toggleSortOrder}
+        />
+      </View>
       <FlatList
         data={notifications.sort((a, b) => {
           if (sortBy === 'newest') {
