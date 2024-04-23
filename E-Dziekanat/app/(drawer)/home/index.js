@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, FlatList, Platform } from 'react-native';
+import { Text, View, StyleSheet, FlatList, Platform, Alert } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
 import { auth, db } from '../../../components/configs/firebase-config';
 import { getDatabase, ref, set, query, orderByChild, equalTo, onValue } from "firebase/database";
-import { getMessaging, getToken } from "firebase/messaging";
 import Timer from '../../../components/timer';
 import { useNavigation } from '@react-navigation/native';
 import messaging from '@react-native-firebase/messaging';
@@ -78,8 +77,14 @@ export default function HomePage() {
       }
     };
 
-
     fetchUnreadNotifications();
+
+    // Rejestruj handler wiadomości push
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
+    });
+
+    return unsubscribe;
   }, []);
 
   const handleMobileToken = async (user) => {
