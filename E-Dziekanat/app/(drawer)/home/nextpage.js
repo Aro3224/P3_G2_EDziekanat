@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Text, View, StyleSheet, TextInput, Button, FlatList } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
-import { DrawerToggleButton } from '@react-navigation/drawer';
 import { db } from '../../../components/configs/firebase-config';
 import { ref, get, child, set, push, serverTimestamp, onValue } from "firebase/database";
 import { useRoute } from '@react-navigation/native';
@@ -13,7 +12,7 @@ export default function NextPage() {
   const [response, setResponse] = useState('');
   const [responses, setResponses] = useState([]);
   const route = useRoute();
-  const notificationId = route.params.id; // Przechwyć przekazane id wiadomości
+  const notificationId = route.params.id;
 
   useEffect(() => {
     const fetchNotificationContent = async () => {
@@ -82,7 +81,6 @@ export default function NextPage() {
       };
       await push(dbRef, responseObj);
       setResponse('');
-      // Możesz także dodać logikę do wyświetlenia potwierdzenia wysłania odpowiedzi
     } catch (error) {
       console.error('Błąd podczas zapisywania odpowiedzi:', error);
     }
