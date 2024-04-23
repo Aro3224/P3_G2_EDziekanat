@@ -8,6 +8,7 @@ import { getDatabase, ref, set, query, orderByChild, equalTo, onValue } from "fi
 import Timer from '../../../components/timer';
 import { useNavigation } from '@react-navigation/native';
 import messaging from '@react-native-firebase/messaging';
+import { getMessaging, getToken } from "firebase/messaging";
 
 export default function HomePage() {
   const [userEmail, setUserEmail] = useState(null);
@@ -25,7 +26,7 @@ export default function HomePage() {
         console.error('Error fetching user data:', error);
       }
     };
-    
+
     fetchUserData();
 
     // Dodaj nasłuchiwanie zmiany stanu autoryzacji użytkownika
@@ -36,6 +37,13 @@ export default function HomePage() {
           await handleWebToken(user);
         } else {
           await handleMobileToken(user);
+
+          // Rejestruj handler wiadomości push
+          const unsubscribe = messaging().onMessage(async remoteMessage => {
+            Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
+          });
+
+          return unsubscribe;
         }
       }
     });
@@ -79,12 +87,6 @@ export default function HomePage() {
 
     fetchUnreadNotifications();
 
-    // Rejestruj handler wiadomości push
-    const unsubscribe = messaging().onMessage(async remoteMessage => {
-      Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
-    });
-
-    return unsubscribe;
   }, []);
 
   const handleMobileToken = async (user) => {
@@ -112,7 +114,7 @@ export default function HomePage() {
     const enabled =
       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-  
+
     if (enabled) {
       console.log('Authorization status:', authStatus);
     }
