@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TextInput, TouchableOpacity, Pressable } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
-import { ref, get } from 'firebase/database';
+import { ref, get, update } from 'firebase/database';
 import { db } from '../../../components/configs/firebase-config';
-import axios from 'axios';
 import { Link } from 'expo-router';
 
 
@@ -44,25 +43,18 @@ export default function EditAccountPage() {
 
     const editUser = async () => {
         if (textEmailValue != "" && textNameValue != "" && textSurnameValue != "" && textPhoneValue != "") {
-            try {
-                const response = await axios.post('http://localhost:8000/api/edit-user/', {
-                    UID: userId,
-                    email: textEmailValue,
-                    Imie: textNameValue,
-                    Nazwisko: textSurnameValue,
-                    NrTelefonu: textPhoneValue,
-                },
-                {
-                    headers: {
-                    'Authorization': 'Bearer ' + userToken
-                    }
-                });
-                console.log(response.data);
+            update(ref(db, `users/${userId}/`), {
+                Imie: textNameValue,
+                Nazwisko: textSurnameValue,
+                NrTelefonu: textPhoneValue
+              }).then(() => {
+                // Data saved successfully!
                 alert("Dane zostały zaaktualizowane");
-            } catch (error) {
-                  console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
+                })
+                .catch((error) => {
                 alert("Wystąpił błąd podczas aktualizacji danych");
-            }
+                console.log(error)
+            });
         } else {
             alert("Musisz uzupełnić wszystkie pola");
         }
