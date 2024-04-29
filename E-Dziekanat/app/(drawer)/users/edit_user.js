@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { ref, get } from 'firebase/database';
-import { db } from '../../../components/configs/firebase-config';
+import { db, auth } from '../../../components/configs/firebase-config';
 import axios from 'axios';
 import { Checkbox } from 'react-native-paper';
 import { getAuth } from "firebase/auth";
@@ -25,6 +25,7 @@ export default function EditUserPage() {
     const [checkedPracownik, setCheckedPracownik] = useState(false);
     const [textRoleValue, setTextRoleValue] = useState("");
     const [userToken, setUserToken] = useState('');
+    const [redirect, setRedirect] = useState(false);
 
 
     useEffect(() => {
@@ -64,6 +65,25 @@ export default function EditUserPage() {
             }
         };
         readData();
+
+        const fetchUserRole = async () => {
+            try {
+              const user = auth.currentUser;
+              const path = 'users/' + user.uid;
+              const snapshot = await get(ref(db, path));
+              if (snapshot.exists()) {
+                const userData = snapshot.val();
+                if (userData?.Rola == "Wykładowca") {
+                  setRedirect(true);
+                } else {
+                  setRedirect(false);
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching user data:', error);
+            }
+          };
+        fetchUserRole();
     }, []);
 
     const editUser = async () => {
@@ -151,6 +171,12 @@ export default function EditUserPage() {
         }
     };
     
+      if (redirect) {
+        const link = document.createElement('a');
+        link.href = "/(drawer)/home";
+        link.click();
+      }
+
     return (
         <View style={styles.container}>
             <Drawer.Screen 

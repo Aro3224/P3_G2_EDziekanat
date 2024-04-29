@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity,FlatList } from 'react-native'
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { ref, get, onValue, set } from 'firebase/database';
-import { db } from '../../../components/configs/firebase-config';
+import { db, auth } from '../../../components/configs/firebase-config';
 import { MaterialIcons } from '@expo/vector-icons';
 
 
@@ -17,6 +17,7 @@ export default function EditButtonPage() {
     const [selectedUser, setSelectedUser] = useState("")
     const [selectedGroup, setSelectedGroup] = useState("")
     const [groups, setGroups] = useState([]);
+    const [redirect, setRedirect] = useState(false);
 
 
     useEffect(() => {
@@ -78,6 +79,24 @@ export default function EditButtonPage() {
 
         fetchGroups();
 
+        const fetchUserRole = async () => {
+            try {
+              const user = auth.currentUser;
+              const path = 'users/' + user.uid;
+              const snapshot = await get(ref(db, path));
+              if (snapshot.exists()) {
+                const userData = snapshot.val();
+                if (userData?.Rola == "Wykładowca") {
+                  setRedirect(true);
+                } else {
+                  setRedirect(false);
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching user data:', error);
+            }
+          };
+        fetchUserRole();
     }, []);
 
 
@@ -114,6 +133,12 @@ export default function EditButtonPage() {
             alert('Wystąpił błąd podczas dodawania przycisku. Spróbuj ponownie później.');
           }
     }
+    
+      if (redirect) {
+        const link = document.createElement('a');
+        link.href = "/(drawer)/home";
+        link.click();
+      }
 
     
     return (

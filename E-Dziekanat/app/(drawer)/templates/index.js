@@ -3,13 +3,14 @@ import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link, Redirect } from 'expo-router';
-import { db } from '../../../components/configs/firebase-config';
+import { db, auth } from '../../../components/configs/firebase-config';
 import { getAuth, createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
-import { getDatabase, onValue, ref, set, remove, update } from "firebase/database";
+import { getDatabase, onValue, ref, set, remove, update, get } from "firebase/database";
 
 export default function TemplatesPage() {
 
   const [templates, setTemplates] = useState([]);
+  const [redirect, setRedirect] = useState(false);
 
   useEffect(() => {
     const templatesRef = ref(db,'/templates');
@@ -23,6 +24,7 @@ export default function TemplatesPage() {
           setTemplates(templatesArray);
         }
       });
+      fetchUserRole();
   }, []);
 
 
@@ -89,6 +91,30 @@ export default function TemplatesPage() {
       Alert.alert('Błąd', 'Wystąpił błąd podczas ustawiania szablonu jako używanego. Spróbuj ponownie później.');
     }
   };
+
+  const fetchUserRole = async () => {
+    try {
+      const user = auth.currentUser;
+      const path = 'users/' + user.uid;
+      const snapshot = await get(ref(db, path));
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        if (userData?.Rola == "Wykładowca") {
+          setRedirect(true);
+        } else {
+          setRedirect(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  if (redirect) {
+    const link = document.createElement('a');
+    link.href = "/(drawer)/home";
+    link.click();
+  }
 
   return (
     <View style={styles.container}>

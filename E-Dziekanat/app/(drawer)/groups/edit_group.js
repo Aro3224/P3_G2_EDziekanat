@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { get, child, ref, update, onValue } from 'firebase/database';
-import { db } from '../../../components/configs/firebase-config';
+import { db, auth } from '../../../components/configs/firebase-config';
 import { Checkbox } from 'react-native-paper';
 
 export default function EditGroupPage() {
@@ -13,6 +13,7 @@ export default function EditGroupPage() {
     const [userData, setUserData] = useState(null);
     const [checkedUsers, setCheckedUsers] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [redirect, setRedirect] = useState(false);
 
     useEffect(() => {
         const groupRef = ref(db, path);
@@ -27,6 +28,7 @@ export default function EditGroupPage() {
             }
         });
         ReadData();
+        fetchUserRole();
     }, []);
     
     
@@ -82,6 +84,30 @@ export default function EditGroupPage() {
         setCheckedUsers(updatedCheckedUsers);
         console.log(userId, 'Checked:', updatedCheckedUsers[userId]);
       };
+
+      const fetchUserRole = async () => {
+        try {
+          const user = auth.currentUser
+          const path = 'users/' + user.uid;
+          const snapshot = await get(ref(db, path));
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            if (userData?.Rola == "Wykładowca") {
+              setRedirect(true);
+            } else {
+              setRedirect(false);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      };
+    
+      if (redirect) {
+        const link = document.createElement('a');
+        link.href = "/(drawer)/home";
+        link.click();
+      }
     
       return (
         <View style={styles.container}>

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Button,SafeAreaView, TextInput, Alert } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { getDatabase, ref, set, push } from "firebase/database";
+import { getDatabase, ref, set, push, get } from "firebase/database";
 
 
 
@@ -14,6 +14,7 @@ export default function AddTemplatePage() {
   const [templateContent, onChangeContent] = useState('');
   const [titleError, setTitleError] = useState('');
   const [contentError, setContentError] = useState('');
+  const [redirect, setRedirect] = useState(false);
 
   const validateTitle = (title) => {
     return title.length > 0;
@@ -56,6 +57,35 @@ export default function AddTemplatePage() {
 
       
 
+  }
+
+  useEffect(() => {
+    fetchUserRole();
+  }, []);
+
+
+  const fetchUserRole = async () => {
+    try {
+      const user = auth.currentUser;
+      const path = 'users/' + user.uid;
+      const snapshot = await get(ref(db, path));
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        if (userData?.Rola == "Wykładowca") {
+          setRedirect(true);
+        } else {
+          setRedirect(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  if (redirect) {
+    const link = document.createElement('a');
+    link.href = "/(drawer)/home";
+    link.click();
   }
 
   return (

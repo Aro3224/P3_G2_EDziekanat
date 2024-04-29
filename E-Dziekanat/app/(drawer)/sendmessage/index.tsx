@@ -4,7 +4,7 @@ import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { ref, onValue, get } from "firebase/database";
 import { getAuth } from "firebase/auth";
-import { db } from '../../../components/configs/firebase-config';
+import { db, auth } from '../../../components/configs/firebase-config';
 import axios from 'axios';
 
 interface Template {
@@ -23,6 +23,7 @@ export default function SendMessagePage() {
   const [messageTitle, setMessageTitle] = useState('');
 
   const [userToken, setUserToken] = useState('');
+  const [redirect, setRedirect] = useState(false);
 
   useEffect(() => {
     const auth = getAuth();
@@ -34,6 +35,7 @@ export default function SendMessagePage() {
         console.error('Błąd podczas pobierania tokenu:', error);
       });
     }
+    fetchUserRole();
   }, []);
 
   useEffect(() => {
@@ -156,6 +158,35 @@ export default function SendMessagePage() {
       alert("Błąd podczas wysyłania wiadomości");
     }
   };
+
+  const fetchUserRole = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const path = 'users/' + user.uid;
+        const snapshot = await get(ref(db, path));
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          if (userData?.Rola == "Wykładowca") {
+            setRedirect(true);
+          } else {
+            setRedirect(false);
+          }
+        }
+      } else {
+        console.error('User nie jest zalogowany');
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+  
+
+  if (redirect) {
+    const link = document.createElement('a');
+    link.href = "/(drawer)/home";
+    link.click();
+  }
 
 
   return (

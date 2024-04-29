@@ -3,15 +3,17 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-nativ
 import { Checkbox } from 'react-native-paper';
 import { Drawer } from 'expo-router/drawer';
 import { get, child, ref, update } from 'firebase/database';
-import { db } from '../../../components/configs/firebase-config';
+import { db, auth } from '../../../components/configs/firebase-config';
 
 export default function NextPage() {
   const [userData, setUserData] = useState(null);
   const [checkedUsers, setCheckedUsers] = useState(false);
   const [textGroupNameValue, setTextGroupNameValue] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [redirect, setRedirect] = useState(false);
 
   useEffect(() => {
+    fetchUserRole();
     ReadData();
   }, []);
 
@@ -64,6 +66,30 @@ export default function NextPage() {
     setCheckedUsers(updatedCheckedUsers);
     console.log(userId, 'Checked:', updatedCheckedUsers[userId]);
   };
+
+  const fetchUserRole = async () => {
+    try {
+      const user = auth.currentUser
+      const path = 'users/' + user.uid;
+      const snapshot = await get(ref(db, path));
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        if (userData?.Rola == "Wykładowca") {
+          setRedirect(true);
+        } else {
+          setRedirect(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  if (redirect) {
+    const link = document.createElement('a');
+    link.href = "/(drawer)/home";
+    link.click();
+  }
 
   return (
     <View style={styles.container}>

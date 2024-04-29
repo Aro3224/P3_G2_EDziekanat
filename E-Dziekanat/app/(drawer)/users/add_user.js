@@ -5,7 +5,7 @@ import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { getDatabase, ref, set } from "firebase/database";
+import { getDatabase, ref, set, get } from "firebase/database";
 import axios from 'axios';
 
 
@@ -15,6 +15,7 @@ export default function AddUserPage() {
   const [emailError, setEmailError] = useState('');
   const [passError, setPassError] = useState('');
   const [userToken, setUserToken] = useState('');
+  const [redirect, setRedirect] = useState(false);
 
 
 
@@ -28,6 +29,7 @@ export default function AddUserPage() {
         console.error('Błąd podczas pobierania tokenu:', error);
       });
     }
+    fetchUserRole();
   }, []);
 
 
@@ -76,6 +78,30 @@ export default function AddUserPage() {
       alert("Wystąpił błąd podczas dodawania użytkownika. Spróbuj ponownie później.")
     }
   };
+
+  const fetchUserRole = async () => {
+    try {
+      const user = auth.currentUser;
+      const path = 'users/' + user.uid;
+      const snapshot = await get(ref(db, path));
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        if (userData?.Rola == "Wykładowca") {
+          setRedirect(true);
+        } else {
+          setRedirect(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  if (redirect) {
+    const link = document.createElement('a');
+    link.href = "/(drawer)/home";
+    link.click();
+  }
 
 
   return (
