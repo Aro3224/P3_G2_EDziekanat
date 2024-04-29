@@ -176,6 +176,7 @@ export default function Layout() {
         options={{
           drawerLabel: "Uzupełnij dane",
           title: "Uzupełnij dane",
+          drawerItemStyle: { display: 'none' },
           drawerIcon: ({ size, color }) => <Ionicons name="pencil-outline" size={size} color={color} />
         }}
       />

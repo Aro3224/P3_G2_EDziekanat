@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
-import { ref, get } from "firebase/database";
+import { ref, get, update } from "firebase/database";
 import { auth, db } from '../../../components/configs/firebase-config'
-import axios from 'axios';
 import { MsgBox } from '../../../components/styles';
+import { Redirect, Link } from 'expo-router';
+import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 
 
 export default function FillDataPage() {
@@ -16,9 +17,10 @@ export default function FillDataPage() {
     const [textPasswordValue, setTextPasswordValue] = useState("");
     const [textRepeatPasswordValue, setTextRepeatPasswordValue] = useState("");
     const [textPhoneValue, setTextPhoneValue] = useState("");
+    const [textCurrentPassword, setCurrentPassword] = useState("");
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState<string>("");
-
+    const [redirect, setRedirect] = useState(false);
 
     useEffect(() => {
         const readData = async () => {
@@ -30,6 +32,14 @@ export default function FillDataPage() {
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     setTextEmailValue(userData?.email || '');
+                    setTextNameValue(userData?.Imie || '');
+                    setTextSurnameValue(userData?.Nazwisko || '');
+                    setTextPhoneValue(userData?.NrTelefonu || '');
+                    if (userData?.NrTelefonu == null || userData?.Imie == null || userData?.Nazwisko == null) {
+                        setRedirect(false);
+                    } else {
+                        setRedirect(true);
+                    }
                 } else {
                     alert("Bład podczas pobierania danych");
                 }
@@ -43,32 +53,47 @@ export default function FillDataPage() {
     }, []);
 
     const editUser = async () => {
-        if (textEmailValue != "" && textPasswordValue != "" && textNameValue != "" && textSurnameValue != "" && textPhoneValue != "")
-        {
-          if( textPasswordValue == textRepeatPasswordValue && textPasswordValue.length >= 6)
-            {
-              try {
-                const response = await axios.post('http://localhost:8000/api/edit-user/', {
-                    UID: userId,
-                    email: textEmailValue,
-                    password: textPasswordValue,
-                    Imie: textNameValue,
-                    Nazwisko: textSurnameValue,
-                    NrTelefonu: textPhoneValue,
-                });
-                console.log(response.data);
-                alert("Dane zostały zaaktualizowane");
-              } catch (error) {
-                console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
-                alert("Wystąpił błąd podczas aktualizacji danych");
-              }
+        if (textEmailValue !== "" && textPasswordValue !== "" && textNameValue !== "" && textSurnameValue !== "" && textPhoneValue !== "" && textCurrentPassword !== "") {
+            if (textPasswordValue === textRepeatPasswordValue && textPasswordValue.length >= 6) {
+                const user = auth.currentUser;
+    
+                if (user) {
+                    const credential = EmailAuthProvider.credential(textEmailValue, textCurrentPassword);
+                    reauthenticateWithCredential(user, credential)
+                        .then(() => {
+                            updatePassword(user, textPasswordValue)
+                                .then(() => {
+                                    update(ref(db, `users/${userId}/`), {
+                                        Imie: textNameValue,
+                                        Nazwisko: textSurnameValue,
+                                        NrTelefonu: textPhoneValue
+                                    }).then(() => {
+                                        // Data saved successfully!
+                                        setRedirect(true);
+                                        alert("Hasło i dane zostały zaaktualizowane");
+                                    }).catch((error) => {
+                                        alert("Wystąpił błąd podczas aktualizacji danych");
+                                        console.error(error);
+                                    });
+                                })
+                                .catch((error) => {
+                                    console.error("Błąd podczas aktualizacji hasła:", error);
+                                    setMessage("Wystąpił błąd podczas aktualizacji hasła");
+                                });
+                        })
+                        .catch((error) => {
+                            console.error("Błąd podczas ponownej autentykacji:", error);
+                            setMessage("Podano złe hasło");
+                        });
+                } else {
+                    console.error("Niezidentyfikowany użytkownik ");
+                }
             } else {
-              setMessage('Podane hasła nie są takie same lub hasło jest za krótkie')
+                setMessage('Podane hasła nie są takie same lub hasło jest za krótkie');
             }
-        }else{
-          setMessage('Uzupełnij wszystkie pola')
+        } else {
+            setMessage('Uzupełnij wszystkie pola');
         }
-        
     };
 
     if (loading) {
@@ -78,20 +103,32 @@ export default function FillDataPage() {
             </View>
         );
     }
-    
+
+    if (redirect) {
+        const link = document.createElement('a');
+        link.href = "/(drawer)/home";
+        link.click();
+    }
+
     return (
         <View style={styles.container}>
-            <Drawer.Screen 
-                options={{ 
-                title:"Uzupełnij Dane", 
-                headerShown: true, 
-                headerLeft: ()=> <DrawerToggleButton/>}} />
+            <Drawer.Screen
+                options={{
+                    title: "Uzupełnij Dane",
+                }} />
             <Text style={styles.subtitle}>Uzupełnij swoje dane</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Wpisz swój email"
                 value={textEmailValue}
                 onChangeText={setTextEmailValue}
+                editable={false}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Wprowadź stare hasło"
+                value={textCurrentPassword}
+                onChangeText={setCurrentPassword}
             />
             <TextInput
                 style={styles.input}
@@ -101,7 +138,7 @@ export default function FillDataPage() {
             />
             <TextInput
                 style={styles.input}
-                placeholder="Potwierdź hasło"
+                placeholder="Potwierdź nowe hasło"
                 value={textRepeatPasswordValue}
                 onChangeText={setTextRepeatPasswordValue}
             />
@@ -157,14 +194,14 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     button: {
-        backgroundColor: "#007bff", 
+        backgroundColor: "#007bff",
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
         marginVertical: 10,
     },
     buttonText: {
-        color: "#fff", 
+        color: "#fff",
         fontSize: 16,
         fontWeight: "bold",
     },
@@ -176,7 +213,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     errorMessage: {
-      color: 'red',
-      fontSize: 18,
-  }
+        color: 'red',
+        fontSize: 18,
+    }
 });
