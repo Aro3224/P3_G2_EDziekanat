@@ -69,6 +69,19 @@ def create_user(request):
 
                 database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
                 user_data = {"email": email}
+
+                name = data.get('Imie')
+                if name:
+                    user_data['Imie'] = name
+
+                surname = data.get('Nazwisko')
+                if surname:
+                    user_data['Nazwisko'] = surname
+
+                role = data.get('Role')
+                if role:
+                    user_data['Rola'] = role
+
                 response = requests.put(f"{database_url}/users/{uid}.json", json=user_data)
 
                 if response.status_code == 200:

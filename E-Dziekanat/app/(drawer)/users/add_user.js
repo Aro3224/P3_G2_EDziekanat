@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Button,SafeAreaView, TextInput, Alert } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
-import { DrawerToggleButton } from '@react-navigation/drawer';
-import { Link } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { getDatabase, ref, set, get } from "firebase/database";
+import { getAuth} from "firebase/auth";
+import { ref, get } from "firebase/database";
 import axios from 'axios';
+import { Checkbox } from 'react-native-paper';
 
 
 export default function AddUserPage() {
@@ -16,6 +15,14 @@ export default function AddUserPage() {
   const [passError, setPassError] = useState('');
   const [userToken, setUserToken] = useState('');
   const [redirect, setRedirect] = useState(false);
+  const [textNameValue, setTextNameValue] = useState("");
+  const [textSurnameValue, setTextSurnameValue] = useState("");
+  const [nameError, setNameError] = useState('');
+  const [surnameError, setSurnameError] = useState('');
+  const [checkedWykladowca, setCheckedWykladowca] = useState(false);
+  const [checkedPracownik, setCheckedPracownik] = useState(false);
+  const [textRoleValue, setTextRoleValue] = useState("");
+  const [roleError, setRoleError] = useState('');
 
 
 
@@ -44,10 +51,13 @@ export default function AddUserPage() {
 
 
 
-  const createUser = async (userEmail, userPass, userToken) => {
+  const createUser = async (userEmail, userPass, userToken, userName, userSurname, userRole) => {
 
     setEmailError('');
     setPassError('');
+    setNameError('');
+    setSurnameError('');
+    setRoleError('');
 
     if (!validateEmail(userEmail)) {
       setEmailError('Podaj poprawny adres e-mail.');
@@ -59,10 +69,33 @@ export default function AddUserPage() {
       return;
     }
 
+    if (userName == "") {
+      setNameError('Wprowadź imię');
+      return;
+    }
+
+    if (userSurname == "") {
+      setSurnameError('Wprowadź nazwisko');
+      return;
+    }
+
+    if (userSurname == "") {
+      setSurnameError('Wprowadź nazwisko');
+      return;
+    }
+
+    if (userRole == "") {
+      setRoleError('Wybierz role');
+      return;
+    }
+
     try {
       const response = await axios.post('http://localhost:8000/api/create-user/', {
         email: userEmail,
         password: userPass,
+        Imie: userName,
+        Nazwisko: userSurname,
+        Role: userRole,
       },
       {
         headers: {
@@ -73,6 +106,11 @@ export default function AddUserPage() {
       console.log(response.data);
       onChangeEmail("");
       onChangePass("");
+      setTextNameValue("");
+      setTextSurnameValue("");
+      setTextRoleValue("")
+      setCheckedPracownik(false)
+      setCheckedWykladowca(false)
     } catch (error) {
       console.error('Błąd podczas wysyłania żądania utworzenia użytkownika:', error);
       alert("Wystąpił błąd podczas dodawania użytkownika. Spróbuj ponownie później.")
@@ -103,6 +141,17 @@ export default function AddUserPage() {
     link.click();
   }
 
+  const handleRoleCheckbox = (role) => {
+    if (role === 'wykladowca') {
+        setCheckedWykladowca(true);
+        setCheckedPracownik(false);
+        setTextRoleValue("Wykładowca")
+    } else if (role === 'pracownik') {
+        setCheckedWykladowca(false);
+        setCheckedPracownik(true);
+        setTextRoleValue("Pracownik")
+    }
+};
 
   return (
     <View style={styles.container}>
@@ -132,8 +181,39 @@ export default function AddUserPage() {
           secureTextEntry={true}
         />
         <Text style={styles.errorText}>{passError}</Text>
+        <Text>Podaj imię:</Text>
+        <TextInput
+          //style={styles.input}
+          onChangeText={setTextNameValue}
+          value={textNameValue}
+          placeholder="Imię"
+        />
+        <Text style={styles.errorText}>{nameError}</Text>
+        <Text>Podaj nazwisko:</Text>
+        <TextInput
+          //style={styles.input}
+          onChangeText={setTextSurnameValue}
+          value={textSurnameValue}
+          placeholder="Naziwsko"
+        />
+        <Text style={styles.errorText}>{surnameError}</Text>
+        <View style={styles.checkboxContainer}>
+                <Checkbox
+                    status={checkedWykladowca ? 'checked' : 'unchecked'}
+                    onPress={() => handleRoleCheckbox('wykladowca')}
+                />
+                <Text>Wykładowca</Text>
+            </View>
+            <View style={styles.checkboxContainer}>
+                <Checkbox
+                    status={checkedPracownik ? 'checked' : 'unchecked'}
+                    onPress={() => handleRoleCheckbox('pracownik')}
+                />
+                <Text>Pracownik</Text>
+            </View>
+            <Text style={styles.errorText}>{roleError}</Text>
       </SafeAreaView>
-      <Button title='Dodaj' onPress={() => createUser(userEmail, userPass, userToken)}/>
+      <Button title='Dodaj' onPress={() => createUser(userEmail, userPass, userToken, textNameValue, textSurnameValue, textRoleValue)}/>
     </View>
   );
 }
@@ -149,4 +229,8 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 10,
   },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+},
 });
