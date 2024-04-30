@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform, Alert } from 'react-native';
+import { Text, View, StyleSheet, Pressable, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link, Redirect } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
-import { getAuth, createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 import { getDatabase, onValue, ref, set, remove, update, get } from "firebase/database";
 
 export default function TemplatesPage() {
 
   const [templates, setTemplates] = useState([]);
   const [redirect, setRedirect] = useState(false);
+  const [showDeleteButton, setShowDeleteButton] = useState(null);
 
   useEffect(() => {
     const templatesRef = ref(db,'/templates');
@@ -84,7 +84,7 @@ export default function TemplatesPage() {
 
     try {
       update(ref(db), updates);
-      setTemplates(updatedTemplates); // Aktualizacja stanu templates
+      setTemplates(updatedTemplates);
       console.log('Szablon został ustawiony jako używany.');
     } catch (error) {
       console.error('Błąd podczas ustawiania szablonu jako używanego:', error);
@@ -138,12 +138,20 @@ export default function TemplatesPage() {
               styles.templateItem,
               template.inUse && styles.selectedTemplateItem
             ]}
+            onMouseEnter={() => setShowDeleteButton(template.id)}
+            onMouseLeave={() => setShowDeleteButton(null)}
           >
             <Text style={styles.templateTitle}>{template.title}</Text>
-            <Text style={styles.templateContent}>{template.content}</Text>
-            <TouchableOpacity onPress={() => {Platform.OS == "web"?handleDeleteTemplateWeb(template.id):handleDeleteTemplate(template.id)}}>
-              <Text style={styles.deleteButton}>Usuń</Text>
-            </TouchableOpacity>
+            <ScrollView style={{ maxHeight: 100 }}> 
+              <Text style={styles.templateContent}>{template.content}</Text>
+            </ScrollView>
+            {!template.inUse && showDeleteButton === template.id && (
+              <View style={styles.deleteButtonContainer}>
+                <TouchableOpacity onPress={() => Platform.OS == "web" ? handleDeleteTemplateWeb(template.id) : handleDeleteTemplate(template.id)}>
+                  <Text style={styles.deleteButtonText}>Usuń</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </TouchableOpacity>
         ))}
       </View>
@@ -186,7 +194,8 @@ const styles = StyleSheet.create({
     padding: 10,
     margin: 5,
     borderRadius: 5,
-    width: '45%',
+    width: '45%', 
+    height: 110, 
   },
   selectedTemplateItem: {
     backgroundColor: '#aaf',
@@ -201,4 +210,12 @@ const styles = StyleSheet.create({
     color: 'red',
     marginTop: 5,
   },
+  deleteButtonContainer: {
+    alignSelf: 'flex-start', // Align to the start of the parent container
+  },
+  deleteButtonText: {
+    color: 'red',
+    marginTop: 5,
+  },
+  
 });
