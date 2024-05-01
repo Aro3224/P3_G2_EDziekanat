@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, TextInput, TouchableOpacity, Platform, Alert } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { ref, get } from 'firebase/database';
@@ -7,6 +7,7 @@ import { db, auth } from '../../../components/configs/firebase-config';
 import axios from 'axios';
 import { Checkbox } from 'react-native-paper';
 import { getAuth } from "firebase/auth";
+import { MsgBox } from '../../../components/styles';
 
 
 export default function EditUserPage() {
@@ -26,6 +27,7 @@ export default function EditUserPage() {
     const [textRoleValue, setTextRoleValue] = useState("");
     const [userToken, setUserToken] = useState('');
     const [redirect, setRedirect] = useState(false);
+    const [message, setMessage] = useState("");
 
 
     useEffect(() => {
@@ -51,9 +53,13 @@ export default function EditUserPage() {
                     setTextSurnameValue(userData?.Nazwisko || '');
                     setTextPhoneValue(userData?.NrTelefonu || '');
                     if (userData?.Rola == "Wykładowca"){
-                        setCheckedWykladowca(userData?.Rola || '');
+                        setCheckedWykladowca(true);
+                        setCheckedPracownik(false);
+                        setTextRoleValue("Wykładowca")
                     }else if(userData?.Rola == "Pracownik"){
-                        setCheckedPracownik(userData?.Rola || '');
+                        setCheckedWykladowca(false);
+                        setCheckedPracownik(true);
+                        setTextRoleValue("Pracownik")
                     }
                 } else {
                     alert("Wykładowca nie istnieje");
@@ -106,13 +112,14 @@ export default function EditUserPage() {
                           }
                         });
                         console.log(response.data);
+                        setMessage("");
                         alert("Dane zostały zaaktualizowane");
                     } catch (error) {
                         console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
-                        alert("Wystąpił błąd podczas aktualizacji danych");
+                        setMessage("Wystąpił błąd podczas aktualizacji danych");
                     }
                 } else {
-                    alert("Hasło jest za krótkie");
+                    setMessage("Hasło jest za krótkie");
                 }
             } else {
                 try {
@@ -130,14 +137,15 @@ export default function EditUserPage() {
                       }
                     });
                     console.log(response.data);
+                    setMessage("");
                     alert("Dane zostały zaaktualizowane");
                 } catch (error) {
                     console.error('Błąd podczas wysyłania żądania edycji użytkownika:', error);
-                    alert("Wystąpił błąd podczas aktualizacji danych");
+                    setMessage("Wystąpił błąd podczas aktualizacji danych");
                 }
             }
         } else {
-            alert("Wybierz stanowisko pracownika");
+            setMessage("Wybierz stanowisko pracownika");
         }
     };
 
@@ -171,11 +179,72 @@ export default function EditUserPage() {
         }
     };
     
-      if (redirect) {
+    if (redirect) {
         const link = document.createElement('a');
         link.href = "/(drawer)/home";
         link.click();
-      }
+    }
+
+    const deleteDataWeb = async () => {
+        const confirmation = window.confirm('Czy na pewno chcesz usunąć dane?');
+        if (confirmation) {
+        try {
+          const response = await axios.post('http://localhost:8000/api/delete-data/', {
+            UID: userId,
+          },
+          {
+            headers: {
+              'Authorization': 'Bearer ' + userToken
+            }
+          }
+        );
+          console.log(response.data);
+          setTextNameValue("")
+          setTextSurnameValue("")
+          setTextPhoneValue("")
+        } catch (error) {
+          console.error('Błąd podczas wysyłania żądania usunięcia użytkownika:', error);
+        }
+      };
+    }
+
+
+    const deleteDataMobile = () => {
+        Alert.alert(
+          'Potwierdzenie',
+          'Czy na pewno chcesz usunąć dane tego użytkownika?',
+          [
+            { text: 'Anuluj', style: 'cancel' },
+            {
+              text: 'Usuń',
+              onPress: async () => {
+                try {
+                  const response = await axios.post('http://localhost:8000/api/delete-data/', {
+                    UID: userId,
+                  },
+                  {
+                    headers: {
+                      'Authorization': 'Bearer ' + userToken
+                    }
+                  }
+                );
+                  console.log(response.data);
+                  setTextNameValue("")
+                  setTextSurnameValue("")
+                  setTextPhoneValue("")
+                } catch (error) {
+                  console.error('Błąd podczas wysyłania żądania usunięcia użytkownika:', error);
+                  Alert.alert('Błąd', 'Wystąpił błąd podczas usuwania użytkownika. Spróbuj ponownie później.');
+                }
+                  
+                
+              },
+            },
+          ],
+          { cancelable: false }
+        );
+      };
+    
 
     return (
         <View style={styles.container}>
@@ -234,9 +303,13 @@ export default function EditUserPage() {
             <TouchableOpacity style={styles.button} onPress={setPasswordEditable}>
                 <Text style={styles.buttonText}>{isPasswordEditable ? 'Naciśnij aby anulować edycje hasła' : 'Naciśnij aby edytować hasło'}</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={() => {Platform.OS == "web"?deleteDataWeb():deleteDataMobile()}}>
+                <Text style={styles.buttonText}>Usuń dane</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={editUser}>
                 <Text style={styles.buttonText}>Zapisz</Text>
             </TouchableOpacity>
+            <MsgBox style={styles.errorMessage}>{message}</MsgBox>
         </View>
     );
 }
@@ -284,5 +357,14 @@ const styles = StyleSheet.create({
     checkboxContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    errorMessage: {
+        color: 'red',
+        fontSize: 18,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '50%',
     },
 });

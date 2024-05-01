@@ -235,3 +235,30 @@ def send_push_notification(request):
             return JsonResponse({'error': 'Registration token not provided'}, status=400)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+
+@csrf_exempt
+def delete_data(request):
+    if request.method == 'POST':
+        deletedata = json.loads(request.body)
+        uid = deletedata.get('UID')
+        if uid:
+            try:
+                # Usuń dane użytkownika z Firebase Realtime Database
+                database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
+                response = requests.delete(f"{database_url}/users/{uid}/Imie.json")
+                response = requests.delete(f"{database_url}/users/{uid}/Nazwisko.json")
+                response = requests.delete(f"{database_url}/users/{uid}/NrTelefonu.json")
+
+                if response.status_code == 200:
+                    return JsonResponse({'message': 'User data deleted successfully'}, status=200)
+                else:
+                    return JsonResponse({'error': 'Failed to delete user data from Firebase database'}, status=500)
+
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
+        else:
+            return JsonResponse({'error': 'UID not provided'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
