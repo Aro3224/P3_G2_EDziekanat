@@ -62,6 +62,11 @@ export const StyledTextInput = styled(TextInput)`
     margin-vertical: 3px;
     margin-bottom: 10px;
     color: ${tertiary};
+    width: '50%';
+    borderWidth: 1px;
+    borderColor: '#ccc';
+    paddingHorizontal: 10px;
+    marginBottom: 20px;
 `;
 
 export const StyledLoginTextInput = styled(TextInput)`

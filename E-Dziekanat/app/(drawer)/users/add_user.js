@@ -1,28 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button,SafeAreaView, TextInput, Alert } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { db, auth } from '../../../components/configs/firebase-config';
 import { getAuth} from "firebase/auth";
 import { ref, get } from "firebase/database";
 import axios from 'axios';
-import { Checkbox } from 'react-native-paper';
+import { MsgBox, StyledButton, ButtonText, StyledTextInput, PageTitle, StyledInputLabel, SelectRoleButton, RoleList, Divider } from '../../../components/styles';
 
 
 export default function AddUserPage() {
   const [userEmail, onChangeEmail] = useState('');
   const [userPass, onChangePass] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passError, setPassError] = useState('');
   const [userToken, setUserToken] = useState('');
   const [redirect, setRedirect] = useState(false);
   const [textNameValue, setTextNameValue] = useState("");
   const [textSurnameValue, setTextSurnameValue] = useState("");
-  const [nameError, setNameError] = useState('');
-  const [surnameError, setSurnameError] = useState('');
-  const [checkedWykladowca, setCheckedWykladowca] = useState(false);
-  const [checkedPracownik, setCheckedPracownik] = useState(false);
-  const [textRoleValue, setTextRoleValue] = useState("");
-  const [roleError, setRoleError] = useState('');
+  const [textRoleValue, setTextRoleValue] = useState("Wybierz rolę");
+  const [showRoleList, setShowRoleList] = useState(false);
+  const [message, setMessage] = useState("");
 
 
 
@@ -53,39 +48,30 @@ export default function AddUserPage() {
 
   const createUser = async (userEmail, userPass, userToken, userName, userSurname, userRole) => {
 
-    setEmailError('');
-    setPassError('');
-    setNameError('');
-    setSurnameError('');
-    setRoleError('');
+    setMessage('');
 
     if (!validateEmail(userEmail)) {
-      setEmailError('Podaj poprawny adres e-mail.');
+      setMessage('Podaj poprawny adres e-mail.');
       return;
     }
 
     if (!validatePassword(userPass)) {
-      setPassError('Hasło musi składać się z co najmniej 6 znaków.');
+      setMessage('Hasło musi składać się z co najmniej 6 znaków.');
       return;
     }
 
     if (userName == "") {
-      setNameError('Wprowadź imię');
+      setMessage('Wprowadź imię');
       return;
     }
 
     if (userSurname == "") {
-      setSurnameError('Wprowadź nazwisko');
+      setMessage('Wprowadź nazwisko');
       return;
     }
 
-    if (userSurname == "") {
-      setSurnameError('Wprowadź nazwisko');
-      return;
-    }
-
-    if (userRole == "") {
-      setRoleError('Wybierz role');
+    if (userRole == "Wybierz rolę") {
+      setMessage('Wybierz role');
       return;
     }
 
@@ -108,12 +94,11 @@ export default function AddUserPage() {
       onChangePass("");
       setTextNameValue("");
       setTextSurnameValue("");
-      setTextRoleValue("")
-      setCheckedPracownik(false)
-      setCheckedWykladowca(false)
+      setTextRoleValue("Wybierz rolę")
+      alert("Użytkownik został dodany");
     } catch (error) {
       console.error('Błąd podczas wysyłania żądania utworzenia użytkownika:', error);
-      alert("Wystąpił błąd podczas dodawania użytkownika. Spróbuj ponownie później.")
+      setMessage("Wystąpił błąd podczas dodawania użytkownika. Spróbuj ponownie później.")
     }
   };
 
@@ -141,96 +126,123 @@ export default function AddUserPage() {
     link.click();
   }
 
-  const handleRoleCheckbox = (role) => {
-    if (role === 'wykladowca') {
-        setCheckedWykladowca(true);
-        setCheckedPracownik(false);
-        setTextRoleValue("Wykładowca")
-    } else if (role === 'pracownik') {
-        setCheckedWykladowca(false);
-        setCheckedPracownik(true);
-        setTextRoleValue("Pracownik")
-    }
-};
+  const toggleRoleList = () => {
+    setShowRoleList(!showRoleList);
+  };
+
+  const selectRole = (role) => {
+  if (role === 'wykladowca') {
+      setTextRoleValue("Wykładowca")
+  } else if (role === 'pracownik') {
+      setTextRoleValue("Pracownik")
+  }
+  setShowRoleList(false);
+  };
 
   return (
-    <View style={styles.container}>
-      <Drawer.Screen 
-      options={{ 
-        title:"Dodaj użytkownika", 
-        headerShown: true, 
-        }}/>
-      <SafeAreaView>
-        <Text>Podaj adres e-mail:</Text>
-        <TextInput
-          //style={styles.input}
-          onChangeText={onChangeEmail}
-          value={userEmail}
-          placeholder='E-mail'
-          autoComplete='email'
-          keyboardType='email-address'
-        />
-        <Text style={styles.errorText}>{emailError}</Text>
-        <Text>Podaj hasło:</Text>
-        <TextInput
-          //style={styles.input}
-          onChangeText={onChangePass}
-          value={userPass}
-          placeholder="Hasło"
-          autoComplete='off'
-          secureTextEntry={true}
-        />
-        <Text style={styles.errorText}>{passError}</Text>
-        <Text>Podaj imię:</Text>
-        <TextInput
-          //style={styles.input}
-          onChangeText={setTextNameValue}
-          value={textNameValue}
-          placeholder="Imię"
-        />
-        <Text style={styles.errorText}>{nameError}</Text>
-        <Text>Podaj nazwisko:</Text>
-        <TextInput
-          //style={styles.input}
-          onChangeText={setTextSurnameValue}
-          value={textSurnameValue}
-          placeholder="Naziwsko"
-        />
-        <Text style={styles.errorText}>{surnameError}</Text>
-        <View style={styles.checkboxContainer}>
-                <Checkbox
-                    status={checkedWykladowca ? 'checked' : 'unchecked'}
-                    onPress={() => handleRoleCheckbox('wykladowca')}
+    <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+            <View style={styles.container}>
+                <Drawer.Screen 
+                    options={{ 
+                        title:"Dodaj użytkownika", 
+                        headerShown: true, 
+                    }}
                 />
-                <Text>Wykładowca</Text>
-            </View>
-            <View style={styles.checkboxContainer}>
-                <Checkbox
-                    status={checkedPracownik ? 'checked' : 'unchecked'}
-                    onPress={() => handleRoleCheckbox('pracownik')}
+                <PageTitle>Dodaj użytkownika</PageTitle>
+                <StyledInputLabel>E-mail</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    onChangeText={onChangeEmail}
+                    value={userEmail}
+                    placeholder='E-mail'
+                    autoComplete='email'
+                    keyboardType='email-address'
                 />
-                <Text>Pracownik</Text>
+                <StyledInputLabel>Hasło</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    onChangeText={onChangePass}
+                    value={userPass}
+                    placeholder="Hasło"
+                    autoComplete='off'
+                    secureTextEntry={true}
+                />
+                <StyledInputLabel>Imię</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    onChangeText={setTextNameValue}
+                    value={textNameValue}
+                    placeholder="Imię"
+                />
+                <StyledInputLabel>Nazwisko</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    onChangeText={setTextSurnameValue}
+                    value={textSurnameValue}
+                    placeholder="Naziwsko"
+                />
+                <StyledInputLabel>Rola</StyledInputLabel>
+                <SelectRoleButton onPress={toggleRoleList}>
+                  <Text>{textRoleValue}</Text>
+                </SelectRoleButton>
+                    
+                {showRoleList && (
+                    <RoleList>
+                        <TouchableOpacity onPress={() => selectRole('wykladowca')}>
+                            <Text style={styles.roleListItem}>Wykładowca</Text>
+                        </TouchableOpacity>
+                        <Divider></Divider>
+                        <TouchableOpacity onPress={() => selectRole('pracownik')}>
+                            <Text style={styles.roleListItem}>Pracownik</Text>
+                        </TouchableOpacity>
+                    </RoleList>
+                )}
+                <View style={styles.buttonContainer}>
+                <StyledButton onPress={() => createUser(userEmail, userPass, userToken, textNameValue, textSurnameValue, textRoleValue)}>
+                    <ButtonText>Dodaj</ButtonText>
+                </StyledButton>
             </View>
-            <Text style={styles.errorText}>{roleError}</Text>
-      </SafeAreaView>
-      <Button title='Dodaj' onPress={() => createUser(userEmail, userPass, userToken, textNameValue, textSurnameValue, textRoleValue)}/>
-    </View>
-  );
+                <MsgBox style={styles.errorMessage}>{message}</MsgBox>
+            </View>
+        </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollViewContainer: {
+    flexGrow: 1,
+},
+container: {
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-  },
-  errorText: {
-    color: 'red',
-    marginBottom: 10,
-  },
-  checkboxContainer: {
+},
+inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 20,
+},
+input: {
+    width: '50%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    paddingHorizontal: 10,
+    marginBottom: 20,
+},
+inputLocked: {
+    borderColor: 'orange'
+},
+errorMessage: {
+    color: 'red',
+    fontSize: 18,
+},
+buttonContainer: {
+    marginTop: 15,
+    justifyContent: 'center'
+},
+roleListItem: {
+  marginTop: 5,
+  marginBottom: 5,
 },
 });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { ref, get } from 'firebase/database';
@@ -236,7 +236,7 @@ export default function EditUserPage() {
       } else if (role === 'pracownik') {
           setTextRoleValue("Pracownik")
       }
-      setShowRoleList(false); // Hide the role list after selection
+      setShowRoleList(false);
   };
 
     return (
