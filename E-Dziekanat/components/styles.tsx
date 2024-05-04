@@ -56,6 +56,17 @@ export const StyledFormArea = styled(View)`
 export const StyledTextInput = styled(TextInput)`
     background-color: ${secondary};
     padding: 15px;
+    border-radius: 5px;
+    font-size: 16px;
+    height: 50px;
+    margin-vertical: 3px;
+    margin-bottom: 10px;
+    color: ${tertiary};
+`;
+
+export const StyledLoginTextInput = styled(TextInput)`
+    background-color: ${secondary};
+    padding: 15px;
     padding-left: 55px;
     padding-right: 55px;
     border-radius: 5px;
@@ -68,8 +79,9 @@ export const StyledTextInput = styled(TextInput)`
 
 export const StyledInputLabel = styled(Text)`
     color: ${tertiary};
-    font-size: 13px;
+    font-size: 16px;
     text-align: left;
+    font-weight: bold;
 `;
 
 export const LeftIcon = styled(View)`
@@ -93,15 +105,57 @@ export const StyledButton = styled(TouchableOpacity)`
     align-items: center;
     border-radius: 5px;
     margin-vertical: 5px;
-    height: 60px;
+    margin-horizontal: 15px;
+    height: 50px;
 `;
 
 export const ButtonText = styled(Text)`
     color: ${primary};
     font-size: 16px;
+    font-weight: bold;
 `;
 
 export const MsgBox = styled(Text)`
     text-align: center;
     font-size: 13px;
+`;
+
+export const SelectRoleButton = styled(TouchableOpacity)`
+    text-align: center;
+    font-size: 13px;
+    width: 50%;
+    borderWidth: 1px;
+    borderColor: #ccc;
+    paddingHorizontal: 10px;
+    marginBottom: 20px;
+    backgroundColor: #E5E7EB;
+    padding: 15px;
+    borderRadius: 5px;
+    fontSize: 16px;
+    height: 50px;
+    marginVertical: 3px;
+    marginBottom: 10px;
+`;
+
+export const RoleList = styled(View)`
+    top: 5px;
+    backgroundColor: '#fff';
+    borderWidth: 1px;
+    borderColor: '#ccc';
+    borderRadius: 5px;
+    padding: 10px;
+    zIndex: 1;
+    width: 50%;
+    borderWidth: 1px;
+    borderColor: '#ccc';
+    paddingHorizontal: 10px;
+    marginBottom: 20px;
+    alignItems: center;
+`;
+
+export const Divider = styled(View)`
+    height: 1px;
+    width: 100%;
+    background-color: ${tertiary};
+    margin-vertical: 10px;
 `;

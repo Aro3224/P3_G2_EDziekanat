@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Pressable } from 'react-native';
+import { Text, View, StyleSheet, TextInput, TouchableOpacity, Pressable, Platform } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { ref, get, update } from 'firebase/database';
@@ -102,7 +102,7 @@ export default function EditAccountPage() {
                 value={textPhoneValue}
                 onChangeText={setTextPhoneValue}
             />
-            <View style={styles.buttonContainer}>
+            <View style={Platform.OS === "web" ? styles.buttonContainer : styles.buttonContainerOS}>
                 <Link href={`/(drawer)/settings`} asChild style={styles.button}>
                     <Pressable>
                         <Text style={styles.buttonText}>Anuluj</Text>
@@ -145,6 +145,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '50%',
+    },
+    buttonContainerOS: {
+        marginTop: 15,
     },
     button: {
         backgroundColor: "#007bff", 

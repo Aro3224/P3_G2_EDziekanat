@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyledContainer, InnerContainer, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, StyledTextInput, RightIcon, StyledButton, ButtonText, Colors, MsgBox } from '../styles';
+import { StyledContainer, InnerContainer, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, RightIcon, StyledButton, ButtonText, Colors, MsgBox, StyledLoginTextInput } from '../styles';
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import { Formik } from 'formik';
@@ -88,7 +88,7 @@ interface MyTextInputProps {
     setHidePassword?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const MyTextInput: React.FC<MyTextInputProps & React.ComponentProps<typeof StyledTextInput>> = ({
+const MyTextInput: React.FC<MyTextInputProps & React.ComponentProps<typeof StyledLoginTextInput>> = ({
     label,
     icon,
     isPassword,
@@ -104,7 +104,7 @@ const MyTextInput: React.FC<MyTextInputProps & React.ComponentProps<typeof Style
                 {icon === 'lock' && <Octicons name="lock" size={30} color={brand} />}
             </LeftIcon>
             <StyledInputLabel>{label}</StyledInputLabel>
-            <StyledTextInput {...props} />
+            <StyledLoginTextInput {...props} />
             {isPassword && icon === 'lock' && (
                 <RightIcon onPress={() => setHidePassword && setHidePassword(!hidePassword)}>
                     <Ionicons name={hidePassword ? 'eye-off' : 'eye'} size={30} color={darkLight} />
@@ -113,6 +113,5 @@ const MyTextInput: React.FC<MyTextInputProps & React.ComponentProps<typeof Style
         </View>
     )
 }
-
 
 export default Login;

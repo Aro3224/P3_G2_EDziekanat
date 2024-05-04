@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Platform, Alert } from 'react-native';
+import { Text, View, StyleSheet, TextInput, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { ref, get } from 'firebase/database';
 import { db, auth } from '../../../components/configs/firebase-config';
 import axios from 'axios';
-import { Checkbox } from 'react-native-paper';
 import { getAuth } from "firebase/auth";
-import { MsgBox } from '../../../components/styles';
+import { MsgBox, StyledButton, ButtonText, StyledTextInput, PageTitle, StyledInputLabel, SelectRoleButton, RoleList, Divider } from '../../../components/styles';
 
 
 export default function EditUserPage() {
@@ -22,13 +21,11 @@ export default function EditUserPage() {
     const [loading, setLoading] = useState(true);
     const [isPasswordEditable, setIsPasswordEditable] = useState(false);
     const [placeHolderValue, setPlaceHolderValue] = useState("Edycja hasła zablokowana");
-    const [checkedWykladowca, setCheckedWykladowca] = useState(false);
-    const [checkedPracownik, setCheckedPracownik] = useState(false);
     const [textRoleValue, setTextRoleValue] = useState("");
     const [userToken, setUserToken] = useState('');
     const [redirect, setRedirect] = useState(false);
     const [message, setMessage] = useState("");
-
+    const [showRoleList, setShowRoleList] = useState(false);
 
     useEffect(() => {
         const auth = getAuth();
@@ -53,12 +50,8 @@ export default function EditUserPage() {
                     setTextSurnameValue(userData?.Nazwisko || '');
                     setTextPhoneValue(userData?.NrTelefonu || '');
                     if (userData?.Rola == "Wykładowca"){
-                        setCheckedWykladowca(true);
-                        setCheckedPracownik(false);
                         setTextRoleValue("Wykładowca")
                     }else if(userData?.Rola == "Pracownik"){
-                        setCheckedWykladowca(false);
-                        setCheckedPracownik(true);
                         setTextRoleValue("Pracownik")
                     }
                 } else {
@@ -166,18 +159,6 @@ export default function EditUserPage() {
             setPlaceHolderValue("Wprowadź nowe hasło (co najmniej 6 znaków)");
         }
     };
-
-    const handleRoleCheckbox = (role) => {
-        if (role === 'wykladowca') {
-            setCheckedWykladowca(true);
-            setCheckedPracownik(false);
-            setTextRoleValue("Wykładowca")
-        } else if (role === 'pracownik') {
-            setCheckedWykladowca(false);
-            setCheckedPracownik(true);
-            setTextRoleValue("Pracownik")
-        }
-    };
     
     if (redirect) {
         const link = document.createElement('a');
@@ -244,87 +225,108 @@ export default function EditUserPage() {
           { cancelable: false }
         );
       };
-    
+
+      const toggleRoleList = () => {
+        setShowRoleList(!showRoleList);
+    };
+
+    const selectRole = (role) => {
+      if (role === 'wykladowca') {
+          setTextRoleValue("Wykładowca")
+      } else if (role === 'pracownik') {
+          setTextRoleValue("Pracownik")
+      }
+      setShowRoleList(false); // Hide the role list after selection
+  };
 
     return (
-        <View style={styles.container}>
-            <Drawer.Screen 
-                options={{ 
-                    title:"Edytuj użytkownika", 
-                    headerShown: true, 
-                }}
-            />
-            <Text style={styles.subtitle}>Edytuj Pracownika</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Wpisz email użytkownika.."
-                value={textEmailValue}
-                onChangeText={setTextEmailValue}
-            />
-            <TextInput
-                style={[styles.input, !isPasswordEditable && styles.inputLocked]}
-                placeholder={placeHolderValue}
-                value={textPasswordValue}
-                onChangeText={setTextPasswordValue}
-                editable={isPasswordEditable}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Wpisz imię użytkownika.."
-                value={textNameValue}
-                onChangeText={setTextNameValue}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Wpisz nazwisko użytkownika.."
-                value={textSurnameValue}
-                onChangeText={setTextSurnameValue}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Wpisz numer telefonu użytkownika..."
-                value={textPhoneValue}
-                onChangeText={setTextPhoneValue}
-            />
-            <View style={styles.checkboxContainer}>
-                <Checkbox
-                    status={checkedWykladowca ? 'checked' : 'unchecked'}
-                    onPress={() => handleRoleCheckbox('wykladowca')}
+        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+            <View style={styles.container}>
+                <Drawer.Screen 
+                    options={{ 
+                        title:"Edytuj użytkownika", 
+                        headerShown: true, 
+                    }}
                 />
-                <Text>Wykładowca</Text>
-            </View>
-            <View style={styles.checkboxContainer}>
-                <Checkbox
-                    status={checkedPracownik ? 'checked' : 'unchecked'}
-                    onPress={() => handleRoleCheckbox('pracownik')}
+                <PageTitle>Edytuj użytkownika</PageTitle>
+                <StyledInputLabel>E-mail</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wpisz email użytkownika.."
+                    value={textEmailValue}
+                    onChangeText={setTextEmailValue}
                 />
-                <Text>Pracownik</Text>
+                <StyledInputLabel>Hasło</StyledInputLabel>
+                <StyledTextInput 
+                    style={[styles.input, !isPasswordEditable && styles.inputLocked]}
+                    placeholder={placeHolderValue}
+                    value={textPasswordValue}
+                    onChangeText={setTextPasswordValue}
+                    editable={isPasswordEditable}
+                />
+                <StyledInputLabel>Imię</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wpisz imię użytkownika.."
+                    value={textNameValue}
+                    onChangeText={setTextNameValue}
+                />
+                <StyledInputLabel>Nazwisko</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wpisz nazwisko użytkownika.."
+                    value={textSurnameValue}
+                    onChangeText={setTextSurnameValue}
+                />
+                <StyledInputLabel>Numer telefonu</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wpisz numer telefonu użytkownika..."
+                    value={textPhoneValue}
+                    onChangeText={setTextPhoneValue}
+                />
+                <StyledInputLabel>Rola</StyledInputLabel>
+                <SelectRoleButton onPress={toggleRoleList}>
+                  <Text>{textRoleValue}</Text>
+                </SelectRoleButton>
+                    
+                {showRoleList && (
+                    <RoleList>
+                        <TouchableOpacity onPress={() => selectRole('wykladowca')}>
+                            <Text style={styles.roleListItem}>Wykładowca</Text>
+                        </TouchableOpacity>
+                        <Divider></Divider>
+                        <TouchableOpacity onPress={() => selectRole('pracownik')}>
+                            <Text style={styles.roleListItem}>Pracownik</Text>
+                        </TouchableOpacity>
+                    </RoleList>
+                )}
+                <View style={Platform.OS === "web" ? styles.buttonContainer : styles.buttonContainerOS}>
+                <StyledButton onPress={() => {Platform.OS == "web"?deleteDataWeb():deleteDataMobile()}}>
+                    <ButtonText>Usuń dane</ButtonText>
+                </StyledButton>
+                <StyledButton onPress={setPasswordEditable}>
+                    <ButtonText>{isPasswordEditable ? 'Naciśnij aby anulować edycje hasła' : 'Naciśnij aby edytować hasło'}</ButtonText>
+                </StyledButton>
+                <StyledButton onPress={editUser}>
+                    <ButtonText>Zapisz</ButtonText>
+                </StyledButton>
             </View>
-            <TouchableOpacity style={styles.button} onPress={setPasswordEditable}>
-                <Text style={styles.buttonText}>{isPasswordEditable ? 'Naciśnij aby anulować edycje hasła' : 'Naciśnij aby edytować hasło'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={() => {Platform.OS == "web"?deleteDataWeb():deleteDataMobile()}}>
-                <Text style={styles.buttonText}>Usuń dane</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={editUser}>
-                <Text style={styles.buttonText}>Zapisz</Text>
-            </TouchableOpacity>
-            <MsgBox style={styles.errorMessage}>{message}</MsgBox>
-        </View>
+                <MsgBox style={styles.errorMessage}>{message}</MsgBox>
+            </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
+    scrollViewContainer: {
+        flexGrow: 1,
+    },
     container: {
         flex: 1,
         backgroundColor: "#fff",
         alignItems: "center",
         justifyContent: "center",
-    },
-    subtitle: {
-        fontSize: 36,
-        marginBottom: 20,
-        fontWeight: 'bold',
     },
     inputContainer: {
         flexDirection: 'row',
@@ -333,30 +335,13 @@ const styles = StyleSheet.create({
     },
     input: {
         width: '50%',
-        height: 40,
         borderWidth: 1,
         borderColor: '#ccc',
         paddingHorizontal: 10,
         marginBottom: 20,
     },
-    button: {
-        backgroundColor: "#007bff", 
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-        marginVertical: 10,
-    },
-    buttonText: {
-        color: "#fff", 
-        fontSize: 16,
-        fontWeight: "bold",
-    },
     inputLocked: {
         borderColor: 'orange'
-    },
-    checkboxContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
     },
     errorMessage: {
         color: 'red',
@@ -364,7 +349,16 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '50%',
+        width: '53%',
+        paddingHorizontal: 20,
+        marginTop: 15,
+        justifyContent: 'space-between'
     },
+    buttonContainerOS: {
+      marginTop: 15,
+    },
+    roleListItem: {
+      marginTop: 5,
+      marginBottom: 5,
+  },
 });
