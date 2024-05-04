@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, Platform, View, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
-import { DrawerToggleButton } from '@react-navigation/drawer';
 import { ref, get, update } from "firebase/database";
 import { auth, db } from '../../../components/configs/firebase-config'
-import { MsgBox } from '../../../components/styles';
-import { Redirect, Link } from 'expo-router';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
-
+import { MsgBox, StyledButton, ButtonText, StyledTextInput, PageTitle, StyledInputLabel, SelectRoleButton, RoleList, Divider } from '../../../components/styles';
+import { useNavigation } from '@react-navigation/native';
 
 export default function FillDataPage() {
     const [userId, setUserId] = useState<string | null>(null);
@@ -21,6 +19,7 @@ export default function FillDataPage() {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState<string>("");
     const [redirect, setRedirect] = useState(false);
+    const navigation = useNavigation();
 
     useEffect(() => {
         const readData = async () => {
@@ -105,80 +104,96 @@ export default function FillDataPage() {
     }
 
     if (redirect) {
-        const link = document.createElement('a');
-        link.href = "/(drawer)/home";
-        link.click();
+        if(Platform.OS =='web'){
+            const link = document.createElement('a');
+            link.href = "/(drawer)/home";
+            link.click();
+        }{
+            navigation.navigate('home');
+        }
     }
 
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+            <View style={styles.container}>
             <Drawer.Screen
                 options={{
                     title: "Uzupełnij Dane",
                 }} />
-            <Text style={styles.subtitle}>Uzupełnij swoje dane</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Wpisz swój email"
-                value={textEmailValue}
-                onChangeText={setTextEmailValue}
-                editable={false}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Wprowadź stare hasło"
-                value={textCurrentPassword}
-                onChangeText={setCurrentPassword}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Wprowadź nowe hasło (co najmniej 6 znaków)"
-                value={textPasswordValue}
-                onChangeText={setTextPasswordValue}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Potwierdź nowe hasło"
-                value={textRepeatPasswordValue}
-                onChangeText={setTextRepeatPasswordValue}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Wpisz swoje imię"
-                value={textNameValue}
-                onChangeText={setTextNameValue}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Wpisz swoje nazwisko"
-                value={textSurnameValue}
-                onChangeText={setTextSurnameValue}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Wpisz swój numer telefonu"
-                value={textPhoneValue}
-                onChangeText={setTextPhoneValue}
-            />
-            <MsgBox style={styles.errorMessage}>{message}</MsgBox>
-            <TouchableOpacity style={styles.button} onPress={editUser}>
-                <Text style={styles.buttonText}>Zapisz</Text>
-            </TouchableOpacity>
-        </View>
+                <PageTitle>Uzupełnij swoje dane</PageTitle>
+                <StyledInputLabel>E-mail</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wpisz swój email"
+                    value={textEmailValue}
+                    onChangeText={setTextEmailValue}
+                    editable={false}
+                />
+                <StyledInputLabel>Stare hasło</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wprowadź stare hasło"
+                    value={textCurrentPassword}
+                    onChangeText={setCurrentPassword}
+                    secureTextEntry={true}
+                />
+                <StyledInputLabel>Nowe hasło</StyledInputLabel>
+                <StyledTextInput
+                    style={styles.input}
+                    placeholder="Wprowadź nowe hasło (co najmniej 6 znaków)"
+                    value={textPasswordValue}
+                    onChangeText={setTextPasswordValue}
+                    secureTextEntry={true}
+                />
+                <StyledInputLabel>Potwierdź hasło</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Potwierdź nowe hasło"
+                    value={textRepeatPasswordValue}
+                    onChangeText={setTextRepeatPasswordValue}
+                    secureTextEntry={true}
+                />
+                <StyledInputLabel>Imię</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wpisz swoje imię"
+                    value={textNameValue}
+                    onChangeText={setTextNameValue}
+                />
+                <StyledInputLabel>Nazwisko</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wpisz swoje nazwisko"
+                    value={textSurnameValue}
+                    onChangeText={setTextSurnameValue}
+                />
+                <StyledInputLabel>Numer telefonu</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    placeholder="Wpisz swój numer telefonu"
+                    value={textPhoneValue}
+                    onChangeText={setTextPhoneValue}
+                />
+                <View style={styles.buttonContainer}>
+                <StyledButton onPress={editUser}>
+                    <ButtonText>Zapisz</ButtonText>
+                </StyledButton>
+            </View>
+                <MsgBox style={styles.errorMessage}>{message}</MsgBox>
+            </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
+    scrollViewContainer: {
+        flexGrow: 1,
+    },
     container: {
         flex: 1,
         backgroundColor: "#fff",
         alignItems: "center",
         justifyContent: "center",
-    },
-    subtitle: {
-        fontSize: 36,
-        marginBottom: 20,
-        fontWeight: 'bold',
     },
     inputContainer: {
         flexDirection: 'row',
@@ -187,33 +202,24 @@ const styles = StyleSheet.create({
     },
     input: {
         width: '50%',
-        height: 40,
         borderWidth: 1,
         borderColor: '#ccc',
         paddingHorizontal: 10,
         marginBottom: 20,
     },
-    button: {
-        backgroundColor: "#007bff",
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-        marginVertical: 10,
-    },
-    buttonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
     inputLocked: {
         borderColor: 'orange'
-    },
-    checkboxContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
     },
     errorMessage: {
         color: 'red',
         fontSize: 18,
-    }
+    },
+    buttonContainer: {
+        marginTop: 15,
+        justifyContent: 'center'
+    },
+    roleListItem: {
+      marginTop: 5,
+      marginBottom: 5,
+    },
 });
