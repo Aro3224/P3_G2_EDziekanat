@@ -122,7 +122,7 @@ export default function NextPage() {
           onPress={() => selectUser(item.id)}
         >
           {Platform.OS !== 'web' ? (
-                <Text style={[styles.Name, styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                <Text style={[styles.userName, checkedUsers[item.id] && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
               ) : (
                 <>
                   <Text style={[styles.userID, checkedUsers[item.id] && styles.selectedText]}>{item.email}</Text>

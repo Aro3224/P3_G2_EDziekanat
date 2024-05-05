@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
-import { get, child, ref, update, onValue } from 'firebase/database';
+import { get, ref, update, onValue } from 'firebase/database';
 import { db, auth } from '../../../components/configs/firebase-config';
-import { Checkbox } from 'react-native-paper';
+import { StyledButton, ButtonText, MsgBox, StyledTextInput, PageTitle, StyledInputLabel, } from '../../../components/styles';
 
 export default function EditGroupPage() {
     const route = useRoute();
     const groupId = route.params?.id;
     const path = 'groups/'+ groupId;
-    const [userData, setUserData] = useState(null);
+    const [users, setUsers] = useState([]);
     const [checkedUsers, setCheckedUsers] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [redirect, setRedirect] = useState(false);
@@ -27,23 +27,24 @@ export default function EditGroupPage() {
                 setCheckedUsers(initialCheckedUsers);
             }
         });
-        ReadData();
+
+        const usersRef = ref(db,'/users');
+        onValue(usersRef, (snapshot) => {
+          const usersData = snapshot.val();
+          if (usersData) {
+            const usersArray = Object.keys(usersData).map(key => ({
+              id: key,
+              ...usersData[key]
+            }));
+            setUsers(usersArray);
+          }
+        });
+
         fetchUserRole();
     }, []);
     
     
-      const ReadData = async () => {
-        try {
-          const snapshot = await get(child(ref(db), 'users'));
-          if (snapshot.exists()) {
-            setUserData(snapshot.val());
-          } else {
-            alert("Brak wykładowców")
-          }
-        } catch (error) {
-          console.error('Error:', error);
-        }
-      };
+    
     
       const EditGroup = () => {
         const numberOfCheckedUsers = Object.values(checkedUsers).filter(isChecked => isChecked).length;
@@ -78,7 +79,7 @@ export default function EditGroupPage() {
       };
       
       
-      const handleUserCheckbox = (userId) => {
+      const selectUser = (userId) => {
         const updatedCheckedUsers = { ...checkedUsers };
         updatedCheckedUsers[userId] = !updatedCheckedUsers[userId];
         setCheckedUsers(updatedCheckedUsers);
@@ -110,112 +111,120 @@ export default function EditGroupPage() {
       }
     
       return (
+        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <View style={styles.container}>
           <Drawer.Screen 
               options={{ 
-              title:"Utwórz grupę", }} />
-          <Text style={styles.subtitle}>Edytuj grupę</Text>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Nazwa Grupy:</Text>
-            <TextInput
+              title:"Edytuj grupę", }} />
+          <PageTitle>Edytuj grupę</PageTitle>
+          <StyledInputLabel>Nazwa grupy</StyledInputLabel>
+            <StyledTextInput 
               style={styles.input}
-              placeholder="Wpisz nazwę grupy.."
               value={groupId}
-              editable={false} 
+              editable={false}
+              placeholder="Wpisz nazwę grupy.."
             />
+          <View style={styles.upperPanel}>
+            <Text style={styles.sectionTitle}>Wybierz użytkowników:</Text>
+            {users.map((item) => (
+              <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.userItem,
+                checkedUsers[item.id] && styles.selectedUserItem
+              ]}
+              onPress={() => selectUser(item.id)}
+            >
+              {Platform.OS !== 'web' ? (
+                    <Text style={[styles.userName, checkedUsers[item.id] && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                  ) : (
+                    <>
+                      <Text style={[styles.userID, checkedUsers[item.id] && styles.selectedText]}>{item.email}</Text>
+                      <Text style={[styles.userName, checkedUsers[item.id] && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                    </>
+                  )}
+              
+            </TouchableOpacity>
+            ))}
           </View>
-          <View style={styles.userDataContainer}>
-            {userData && (
-              <>
-                {Object.entries(userData).map(([userId, userData]) => (
-                  <View key={userId}>
-                    <View style={styles.userItem}>
-                      <Text style={styles.userText}>{`${userData.Imie} ${userData.Nazwisko}`}</Text>
-                      <Checkbox
-                        status={checkedUsers[userId] ? 'checked' : 'unchecked'}
-                        onPress={() => handleUserCheckbox(userId)}
-                      />
-                    </View>
-                    <View style={styles.divider} />
-                  </View>
-                ))}
-              </>
-            )}
-      </View>
-         <TouchableOpacity style={styles.button} onPress={EditGroup}>
-         <Text style={styles.buttonText}>Zapisz zmiany</Text>
-       </TouchableOpacity>
-        {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
-     </View>
-    );
+          <StyledButton onPress={EditGroup}>
+            <ButtonText>Zapisz</ButtonText>
+          </StyledButton>
+          <MsgBox style={styles.errorMessage}>{errorMessage}</MsgBox>
+        </View>
+        </ScrollView>
+      );
 }
     
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
+  upperPanelContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'column',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    justifyContent: 'space-between',
+  },
+  upperPanel: {
+    width: '80%',
+    backgroundColor: '#f0f0f0',
+    marginBottom: 10,
+    borderRadius: 10,
+    paddingVertical: 10,
+    marginTop: 30,
+  },
+  userItem: {
+    width: '100%',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#dcdcdc',
+    borderRadius: 5,
+    marginBottom: 5,
+  },
+  selectedUserItem: {
+    backgroundColor: '#6D28D9',
+  },
+  userID: {
+    fontSize: 14,
+    color: '#666',
+  },
+  userName: {
+    fontSize: 14,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    marginLeft: 5,
+  },
+  selectedText: {
+    color: '#fff',
+  },
+  errorMessage: {
+    color: 'red',
+    fontSize: 18,
 },
-    subtitle: {
-        fontSize: 36,
-        marginBottom: 20,
-        fontWeight: 'bold',
+input: {
+  width: '50%',
+  borderWidth: 1,
+  borderColor: '#ccc',
+  paddingHorizontal: 10,
+  marginBottom: 20,
 },
-    userDataContainer: {
-        marginTop: 20,
-        backgroundColor: '#c9d7ff',
-        padding: 10,
-        borderRadius: 5,
-        width: '50%',
-},
-    userItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 10,
-        marginTop: 10,
-},
-    userText: {
-        marginRight: 10,
-        fontSize: 15
-},
-    divider: {
-        borderBottomWidth: 1,
-        borderBottomColor: 'black',
-},
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: '30%',
-},
-    input: {
-        flex: 1,
-        height: 40,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        paddingHorizontal: 10,
-},
-    label: {
-        marginRight: 10,
-        fontSize: 16,
-},
-    button: {
-        backgroundColor: "#007bff", 
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-        marginVertical: 10,
-},
-    buttonText: {
-        color: "#fff", 
-        fontSize: 16,
-        fontWeight: "bold",
-},
-    errorMessage: {
-        color: 'red',
-        marginTop: 10,
-        textAlign: 'center',
-        fontSize: 15,
-    },
 });
