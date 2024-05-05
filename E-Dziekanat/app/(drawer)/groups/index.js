@@ -47,6 +47,7 @@ export default function GroupPage() {
             try {
               await remove(ref(db, `/groups/${groupId}`));
               console.log('Grupa została usunięta z bazy danych.');
+              setSelectedGroup(null);
               setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
             } catch (error) {
               console.error('Błąd podczas usuwania grupy:', error);
@@ -67,6 +68,7 @@ export default function GroupPage() {
         remove(ref(db, `/groups/${groupId}`))
           .then(() => {
             console.log('Grupa została usunięty z bazy danych.');
+            setSelectedGroup(null);
             setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
           })
           .catch((error) => {
