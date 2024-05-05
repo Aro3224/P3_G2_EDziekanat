@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, Pressable, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
-import { Link, Redirect } from 'expo-router';
+import { Link } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
-import { getAuth, createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
-import { getDatabase, onValue, ref, set, remove, get } from "firebase/database";
+import { getAuth } from "firebase/auth";
+import { onValue, ref, get } from "firebase/database";
 import axios from 'axios';
-import { MsgBox, StyledButton, ButtonText, StyledTextInput, PageTitle, StyledInputLabel, SelectRoleButton, RoleList, Divider } from '../../../components/styles';
+import { StyledButton, ButtonText, PageTitle } from '../../../components/styles';
 
 
 export default function UsersPage() {
@@ -235,7 +235,6 @@ selectedUserItem: {
 },
 userID: {
   fontSize: 14,
-  color: '#000',
   color: '#666',
 },
 userEmail: {

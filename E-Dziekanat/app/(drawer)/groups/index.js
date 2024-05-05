@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform, Alert } from 'react-native';
+import { Text, View, StyleSheet, Pressable, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
 import { ref, onValue, remove, get } from "firebase/database";
+import { StyledButton, ButtonText, PageTitle } from '../../../components/styles';
 
 export default function GroupPage() {
   const [groups, setGroups] = useState([]);
   const [redirect, setRedirect] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   useEffect(() => {
     const groupsRef = ref(db, '/groups');
@@ -102,42 +104,64 @@ export default function GroupPage() {
     link.click();
   }
 
+  const selectGroup = (groupId) => {
+    setSelectedGroup(groupId);
+    console.log(groupId)
+  };
+
   return (
-    <>
+    <ScrollView contentContainerStyle={styles.scrollViewContainer}>
       <View style={styles.container}>
-        <Drawer.Screen 
-          options={{ 
-            title: "Grupy", 
-            headerShown: true, 
-            headerLeft: () => <DrawerToggleButton/>
+        <Drawer.Screen
+          options={{
+            title: "Grupy",
+            headerShown: true,
+            headerLeft: () => <DrawerToggleButton />
           }} />
-        <Text style={styles.subtitle}>Grupy</Text>
+        <PageTitle>Lista Grup</PageTitle>
         <Link href="/(drawer)/groups/creategroup" asChild style={styles.button}>
           <Pressable>
             <Text style={styles.buttonText}>Utwórz grupę</Text>
           </Pressable>
         </Link>
-      </View>
-      <View style={styles.container}>
-        <Text style={styles.title}>Lista Grup</Text>
-        <FlatList
-          data={groups}
-          renderItem={({ item }) => (
-            <View style={styles.groupItem}>
-              <Text>Nazwa: {item.id}</Text>
-              <Text>Członkowie: {item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
-              <TouchableOpacity onPress={() => {Platform.OS == "web"?handleDeleteGroupWeb(item.id):handleDeleteGroup(item.id)}}>
-                <Text style={styles.deleteButton}>Usuń</Text>
-              </TouchableOpacity>
-              <Link href={`/(drawer)/groups/edit_group?id=${item.id}`}>
-                <Text style={styles.editButton}>Edytuj</Text>
-              </Link>
-            </View>
+        <View style={styles.upperPanel}>
+          <Text style={styles.sectionTitle}>Wybierz grupę:</Text>
+          {groups.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.groupItem,
+                selectedGroup === item.id && styles.selectedGroupItem
+              ]}
+              onPress={() => selectGroup(item.id)}
+            >
+              {Platform.OS !== 'web' ? (
+                <Text style={[styles.groupEmail, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+              ) : (
+                <>
+                  <Text style={[styles.groupMembers, selectedGroup === item.id && styles.selectedText]}>{item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
+                  <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.buttonContainer}>
+          {selectedGroup && (
+            <Link href={`/(drawer)/groups/edit_group?id=${selectedGroup}`} asChild style={styles.button}>
+              <Pressable>
+                <Text style={styles.buttonText}>Edytuj grupę</Text>
+              </Pressable>
+            </Link>
           )}
-          keyExtractor={item => item.id}
-        />
+          {selectedGroup && (
+            <StyledButton onPress={() => {Platform.OS == "web"?handleDeleteGroupWeb(selectedGroup):handleDeleteGroup(selectedGroup)}}>
+              <ButtonText>Usuń</ButtonText>
+            </StyledButton>
+          )}
+        </View>
       </View>
-    </>
+    </ScrollView>
   );
 }
 
@@ -147,39 +171,84 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
+  },
+  scrollViewContainer: {
+    flexGrow: 1,
   },
   subtitle: {
     fontSize: 36,
     marginBottom: 10,
     fontWeight: 'bold',
   },
-  button: {
-    backgroundColor: "#007bff", 
-    paddingVertical: 10,
+  upperPanelContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'column',
     paddingHorizontal: 20,
+    marginBottom: 20,
+    justifyContent: 'space-between',
+  },
+  upperPanel: {
+    width: '80%',
+    backgroundColor: '#f0f0f0',
+    marginBottom: 10,
+    borderRadius: 10,
+    paddingVertical: 10,
+    marginTop: 30,
+  },
+  groupItem: {
+    width: '100%',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#dcdcdc',
     borderRadius: 5,
-    marginVertical: 10,
+    marginBottom: 5,
+  },
+  selectedGroupItem: {
+    backgroundColor: '#6D28D9',
+  },
+  groupID: {
+    fontSize: 14,
+  },
+  groupMembers: {
+    fontSize: 14,
+    color: '#666',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    marginLeft: 5,
+  },
+  button: {
+    backgroundColor: "#6D28D9", 
+    padding: 15,
+    borderRadius: 5,
+    marginVertical: 5,
+    marginHorizontal: 15,
+    height: 50,
+    justifyContent: 'center',
   },
   buttonText: {
-    color: "#fff", 
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  selectedText: {
+    color: '#fff',
   },
-  groupItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingVertical: 10,
+  buttonContainer: {
+    flexDirection: 'row',
+    width: '83%',
+    paddingHorizontal: 20,
+    marginTop: 15,
+    justifyContent: 'flex-end'
   },
-  deleteButton: {
-    color: 'red',
+  buttonContainerOS: {
+    marginTop: 15,
   },
-  editButton: {
-    color: 'blue',
-  },
-});
+  });
