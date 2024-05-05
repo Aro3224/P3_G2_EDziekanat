@@ -20,7 +20,7 @@ export default function GroupPage() {
           const usersDetails = await Promise.all(users.map(async userID => {
             const userSnapshot = await get(ref(db, `users/${userID}`));
             const userData = userSnapshot.val();
-            return `${userData.Imie} ${userData.Nazwisko}`;
+            return `${userData?.Imie} ${userData?.Nazwisko}`;
           }));
           return {
             id: key,

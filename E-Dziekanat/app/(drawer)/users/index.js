@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform, Alert, } from 'react-native';
+import { Text, View, StyleSheet, Pressable, FlatList, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link, Redirect } from 'expo-router';
@@ -7,6 +7,7 @@ import { db, auth } from '../../../components/configs/firebase-config';
 import { getAuth, createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 import { getDatabase, onValue, ref, set, remove, get } from "firebase/database";
 import axios from 'axios';
+import { MsgBox, StyledButton, ButtonText, StyledTextInput, PageTitle, StyledInputLabel, SelectRoleButton, RoleList, Divider } from '../../../components/styles';
 
 
 export default function UsersPage() {
@@ -14,6 +15,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [userToken, setUserToken] = useState('');
   const [redirect, setRedirect] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     const auth = getAuth();
@@ -66,21 +68,17 @@ export default function UsersPage() {
               }
             );
               console.log(response.data);
+              setSelectedUser(null)
             } catch (error) {
               console.error('Błąd podczas wysyłania żądania usunięcia użytkownika:', error);
               Alert.alert('Błąd', 'Wystąpił błąd podczas usuwania użytkownika. Spróbuj ponownie później.');
             }
-              
-            
           },
         },
       ],
       { cancelable: false }
     );
   };
-
- 
-
 
   const deleteUserWeb = async (userId) => {
     const confirmation = window.confirm('Czy na pewno chcesz usunąć tego użytkownika?');
@@ -96,6 +94,7 @@ export default function UsersPage() {
       }
     );
       console.log(response.data);
+      setSelectedUser(null)
     } catch (error) {
       console.error('Błąd podczas wysyłania żądania usunięcia użytkownika:', error);
     }
@@ -126,77 +125,153 @@ if (redirect) {
   link.click();
 }
 
-  return (
-    <>
+const selectUser = (userId) => {
+  setSelectedUser(userId);
+  console.log(userId)
+};
+
+return (
+  <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={styles.container}>
-      <Drawer.Screen 
-      options={{ 
-        title:"Użytkownicy", 
-        headerShown: true, 
-        headerLeft: ()=> <DrawerToggleButton/>}} />
-        <Link href="/(drawer)/users/add_user" asChild style={styles.button}>
-          <Pressable>
-            <Text style={styles.buttonText}>Dodaj użytkownika</Text>
-          </Pressable>
-        </Link>
+      <Drawer.Screen
+        options={{
+          title: "Użytkownicy",
+          headerShown: true,
+          headerLeft: () => <DrawerToggleButton />
+        }} />
+      <PageTitle>Lista użytkowników</PageTitle>
+      <Link href="/(drawer)/users/add_user" asChild style={styles.button}>
+        <Pressable>
+          <Text style={styles.buttonText}>Dodaj użytkownika</Text>
+        </Pressable>
+      </Link>
+      <View style={styles.upperPanel}>
+        <Text style={styles.sectionTitle}>Wybierz użytkownika:</Text>
+        {users.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={[
+              styles.userItem,
+              selectedUser === item.id && styles.selectedUserItem
+            ]}
+            onPress={() => selectUser(item.id)}
+          >
+            {Platform.OS !== 'web' ? (
+              <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
+            ) : (
+              <>
+                <Text style={[styles.userID, selectedUser === item.id && styles.selectedText]}>{item.id}</Text>
+                <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+      <View style={styles.buttonContainer}>
+        {selectedUser && (
+          <Link href={`/(drawer)/users/edit_user?id=${selectedUser}`} asChild style={styles.button}>
+            <Pressable>
+              <Text style={styles.buttonText}>Edytuj użytkownika</Text>
+            </Pressable>
+          </Link>
+        )}
+        {selectedUser && (
+          <StyledButton onPress={() => {Platform.OS == "web" ? deleteUserWeb(selectedUser) : deleteUserMobile(selectedUser)}} style={styles.button}>
+            <ButtonText>Usuń</ButtonText>
+          </StyledButton>
+        )}
+      </View>
     </View>
-    <View style={styles.container}>
-    <Text style={styles.title}>Lista Użytkowników</Text>
-    <FlatList
-      data={users}
-      renderItem={({ item }) => (
-        <View style={styles.userItem}>
-          <Text>ID: {item.id}</Text>
-          <Text>Email: {item.email}</Text>
-          <TouchableOpacity onPress={() => {Platform.OS == "web"?deleteUserWeb(item.id):deleteUserMobile(item.id)}}>
-              <Text style={styles.deleteButton}>Usuń</Text>
-            </TouchableOpacity>
-            <Link href={`/(drawer)/users/edit_user?id=${item.id}`}>
-              <Text style={styles.editButton}>Edytuj</Text>
-            </Link>
-        </View>
-      )}
-      keyExtractor={item => item.id}
-    />
-  </View>
-  </>
-  );
+  </ScrollView>
+);
+
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  button: {
-    backgroundColor: "#007bff", 
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginVertical: 10,
-  },
-  buttonText: {
-    color: "#fff", 
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  userItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingVertical: 10,
-  },
-  deleteButton: {
-    color: 'red',
-  },
-  editButton: {
-    color: 'blue',
-  },
-})
+container: {
+  flex: 1,
+  backgroundColor: "#fff",
+  alignItems: "center",
+  justifyContent: "center",
+},
+scrollViewContainer: {
+  flexGrow: 1,
+},
+subtitle: {
+  fontSize: 36,
+  marginBottom: 10,
+  fontWeight: 'bold',
+},
+upperPanelContainer: {
+  width: '100%',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexDirection: 'column',
+  paddingHorizontal: 20,
+  marginBottom: 20,
+  justifyContent: 'space-between',
+},
+upperPanel: {
+  width: '80%',
+  backgroundColor: '#f0f0f0',
+  marginBottom: 10,
+  borderRadius: 10,
+  paddingVertical: 10,
+  marginTop: 30,
+},
+userItem: {
+  width: '100%',
+  paddingVertical: 15,
+  paddingHorizontal: 20,
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  backgroundColor: '#dcdcdc',
+  borderRadius: 5,
+  marginBottom: 5,
+},
+selectedUserItem: {
+  backgroundColor: '#6D28D9',
+},
+userID: {
+  fontSize: 14,
+  color: '#000',
+  color: '#666',
+},
+userEmail: {
+  fontSize: 14,
+},
+sectionTitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  marginBottom: 5,
+  marginLeft: 5,
+},
+button: {
+  backgroundColor: "#6D28D9", 
+  padding: 15,
+  borderRadius: 5,
+  marginVertical: 5,
+  marginHorizontal: 15,
+  height: 50,
+  justifyContent: 'center',
+},
+buttonText: {
+  color: "#fff",
+  fontSize: 16,
+  fontWeight: "bold",
+},
+selectedText: {
+  color: '#fff',
+},
+buttonContainer: {
+  flexDirection: 'row',
+  width: '83%',
+  paddingHorizontal: 20,
+  marginTop: 15,
+  justifyContent: 'flex-end'
+},
+buttonContainerOS: {
+  marginTop: 15,
+},
+});
