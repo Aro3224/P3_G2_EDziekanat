@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Pressable, Platform } from 'react-native';
+import { Text, View, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { ref, get, update } from 'firebase/database';
 import { db } from '../../../components/configs/firebase-config';
 import { Link } from 'expo-router';
+import { StyledButton, ButtonText, MsgBox, StyledTextInput, PageTitle, StyledInputLabel, } from '../../../components/styles';
 
 
 export default function EditAccountPage() {
@@ -17,6 +18,7 @@ export default function EditAccountPage() {
     const [textPhoneValue, setTextPhoneValue] = useState("");
     const [loading, setLoading] = useState(true);
     const [userToken, setUserToken] = useState('');
+    const [message, setMessage] = useState("");
 
 
     useEffect(() => {
@@ -50,13 +52,14 @@ export default function EditAccountPage() {
               }).then(() => {
                 // Data saved successfully!
                 alert("Dane zostały zaaktualizowane");
+                setMessage("");
                 })
                 .catch((error) => {
                 alert("Wystąpił błąd podczas aktualizacji danych");
                 console.log(error)
             });
         } else {
-            alert("Musisz uzupełnić wszystkie pola");
+            setMessage("Musisz uzupełnić wszystkie pola");
         }
     };
 
@@ -69,34 +72,39 @@ export default function EditAccountPage() {
     }
 
     return (
+        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <View style={styles.container}>
             <Drawer.Screen 
                 options={{ 
-                    title:"Edytuj użytkownika", 
+                    title:"Edycja danych", 
                     headerShown: true, 
                 }}
             />
-            <Text style={styles.subtitle}>Edytuj swoje dane</Text>
-            <TextInput
+            <PageTitle>Edytuj swoje dane</PageTitle>
+            <StyledInputLabel>E-mail</StyledInputLabel>
+            <StyledTextInput
                 style={styles.input}
                 placeholder="Wpisz email użytkownika.."
                 value={textEmailValue}
                 onChangeText={setTextEmailValue}
                 editable={false}
             />
-            <TextInput
+            <StyledInputLabel>Imię</StyledInputLabel>
+            <StyledTextInput
                 style={styles.input}
                 placeholder="Wpisz swoje imię.."
                 value={textNameValue}
                 onChangeText={setTextNameValue}
             />
-            <TextInput
+            <StyledInputLabel>Nazwisko</StyledInputLabel>
+            <StyledTextInput
                 style={styles.input}
                 placeholder="Wpisz swoje nazwisko.."
                 value={textSurnameValue}
                 onChangeText={setTextSurnameValue}
             />
-            <TextInput
+            <StyledInputLabel>Numer Telefonu</StyledInputLabel>
+            <StyledTextInput
                 style={styles.input}
                 placeholder="Wpisz swój numer telefonu.."
                 value={textPhoneValue}
@@ -108,34 +116,28 @@ export default function EditAccountPage() {
                         <Text style={styles.buttonText}>Anuluj</Text>
                     </Pressable>
                 </Link>
-                <TouchableOpacity style={styles.button} onPress={editUser}>
-                    <Text style={styles.buttonText}>Zapisz</Text>
-                </TouchableOpacity>
+                <StyledButton onPress={editUser}>
+                    <ButtonText>Zapisz</ButtonText>
+                </StyledButton>
             </View>
+            <MsgBox style={styles.errorMessage}>{message}</MsgBox>
         </View>
+        </ScrollView>
     );    
 }
 
 const styles = StyleSheet.create({
+    scrollViewContainer: {
+        flexGrow: 1,
+    },
     container: {
         flex: 1,
         backgroundColor: "#fff",
         alignItems: "center",
         justifyContent: "center",
     },
-    subtitle: {
-        fontSize: 36,
-        marginBottom: 20,
-        fontWeight: 'bold',
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
     input: {
         width: '50%',
-        height: 40,
         borderWidth: 1,
         borderColor: '#ccc',
         paddingHorizontal: 10,
@@ -144,21 +146,27 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: '50%',
+        width: '51.5%',
     },
     buttonContainerOS: {
         marginTop: 15,
     },
     button: {
-        backgroundColor: "#007bff", 
-        paddingVertical: 10,
-        paddingHorizontal: 30,
+        backgroundColor: "#6D28D9", 
+        padding: 15,
         borderRadius: 5,
-        marginVertical: 10,
-    },
+        marginVertical: 5,
+        marginHorizontal: 15,
+        height: 50,
+        justifyContent: 'center',
+      },
     buttonText: {
-        color: "#fff", 
+        color: "#fff",
         fontSize: 16,
         fontWeight: "bold",
+    },
+    errorMessage: {
+        color: 'red',
+        fontSize: 18,
     },
 });
