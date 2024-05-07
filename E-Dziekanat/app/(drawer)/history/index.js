@@ -4,6 +4,7 @@ import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { auth, db } from '../../../components/configs/firebase-config';
 import { getDatabase, ref, child, get } from "firebase/database";
+import { Link } from 'expo-router';
 
 export default function HistoryPage() {
   const [notifications, setNotifications] = useState([]);
@@ -36,23 +37,24 @@ export default function HistoryPage() {
       try {
         const userId = auth.currentUser.uid;
         let notificationsData = [];
-
+  
         if (isAdmin) {
           const usersRef = ref(db, 'users');
           const usersSnapshot = await get(usersRef);
-
+  
           if (usersSnapshot.exists()) {
             const users = usersSnapshot.val();
             const userIds = Object.keys(users);
-
+  
             for (const uid of userIds) {
               const userNotificationsRef = ref(db, `notifications/${uid}`);
               const userNotificationsSnapshot = await get(userNotificationsRef);
-
+  
               if (userNotificationsSnapshot.exists()) {
                 const userNotifications = userNotificationsSnapshot.val();
-                const userNotificationsArray = Object.values(userNotifications);
-                const notificationsWithUser = userNotificationsArray.map(notification => ({
+                const userNotificationsArray = Object.entries(userNotifications); // Use entries instead of values to preserve keys
+                const notificationsWithUser = userNotificationsArray.map(([notificationId, notification]) => ({
+                  id: notificationId,
                   ...notification,
                   userId: uid,
                   userData: users[uid]
@@ -64,21 +66,26 @@ export default function HistoryPage() {
         } else {
           const notificationsRef = ref(db, `notifications/${userId}/`);
           const snapshot = await get(notificationsRef);
-
+  
           if (snapshot.exists()) {
-            const fetchednotificationsData = snapshot.val();
-            notificationsData = Object.values(fetchednotificationsData);
+            const fetchedNotificationsData = snapshot.val();
+            const notificationsArray = Object.entries(fetchedNotificationsData); // Use entries instead of values to preserve keys
+            notificationsData = notificationsArray.map(([notificationId, notification]) => ({
+              id: notificationId,
+              ...notification
+            }));
           }
         }
-
+  
         setNotifications(notificationsData);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       }
     };
-
+  
     fetchNotifications();
   }, [isAdmin]);
+  
 
   const toggleSortOrder = () => {
     setSortDescending(!sortDescending);
@@ -87,18 +94,25 @@ export default function HistoryPage() {
 
   const renderNotificationItem = ({ item }) => {
     const notificationDate = new Date(item.czas).toLocaleString();
-
+    const isUnread = item.odczytano === false;
+  
     return (
-      <View style={styles.notificationItem}>
+      <View style={[styles.notificationItem, isUnread && styles.unreadNotification]}>
         {isAdmin && item.userData && item.userData.email ? (
-        <Text>{item.userData.email}</Text>
-      ) : null}
+          <Text>{item.userData.email}</Text>
+        ) : null}
         <Text style={styles.notificationTitle}>{item.tytul}</Text>
         <Text style={styles.notificationText}>{item.tresc}</Text>
         <Text style={styles.notificationDate}>Data: {notificationDate}</Text>
+        <Link
+          href={`/(drawer)/history/details?uid=${item.userId}&id=${item.id}`}
+        >
+          <Text style={styles.openButton}>Otwórz</Text>
+        </Link>
       </View>
     );
   };
+  
 
   return (
     <View style={styles.container}>
@@ -158,5 +172,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
+  },
+  unreadNotification: {
+    backgroundColor: "#ffcccc", // or any other color to indicate unread status
   },
 });
