@@ -64,11 +64,14 @@ export default function NextPage() {
 
     const updateReadStatus = async () => {
       try {
-        await set(child(dbRef, 'odczytano'), true);
+        if (currentUserUid === userId) {
+          await set(child(dbRef, 'odczytano'), true);
+        }
       } catch (error) {
         console.error('Error updating read status:', error);
       }
     };
+    
 
     const fetchResponses = () => {
       const responsesRef = isAdmin
