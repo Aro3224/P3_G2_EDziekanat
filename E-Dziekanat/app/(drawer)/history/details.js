@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Text, View, StyleSheet, TextInput, Button, FlatList } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { db } from '../../../components/configs/firebase-config';
-import { ref, get, child, set, push, serverTimestamp, onValue } from "firebase/database";
+import { ref, get, child, set, push, serverTimestamp, onValue, update } from "firebase/database";
 import { useRoute } from '@react-navigation/native';
 import { auth } from '../../../components/configs/firebase-config';
 
@@ -64,13 +64,26 @@ export default function NextPage() {
 
     const updateReadStatus = async () => {
       try {
-        if (currentUserUid === userId) {
-          await set(child(dbRef, 'odczytano'), true);
+        const contentSnapshot = await get(child(dbRef, 'tresc'));
+        const titleSnapshot = await get(child(dbRef, 'tytul'));
+    
+        if (contentSnapshot.exists() && titleSnapshot.exists()) {
+          if(!isAdmin){
+            await set(child(dbRef, 'odczytano'), true);
+            console.log("Odczytano set to True")
+          } else {
+            await set(child(dbRef, 'nowaOdpowiedz'), false);
+            console.log("nowaOdpowiedz set to False")
+          }
+          console.log("Notification status changed");
+        } else {
+          console.log("Error fetching notification title or content");
         }
       } catch (error) {
         console.error('Error updating read status:', error);
       }
     };
+    
     
 
     const fetchResponses = () => {
@@ -105,18 +118,32 @@ export default function NextPage() {
       const dbRef = isAdmin
         ? ref(db, `notifications/${userId}/${notificationId}/odpowiedzi`)
         : ref(db, `notifications/${currentUserUid}/${notificationId}/odpowiedzi`);
-
+  
       const responseObj = {
         tresc: response,
         data: serverTimestamp(),
-        isAdmin : isAdmin
+        isAdmin: isAdmin
       };
+  
       await push(dbRef, responseObj);
       setResponse('');
+  
+      if (!isAdmin) {
+        await update(ref(db, `notifications/${currentUserUid}/${notificationId}`), {
+          nowaOdpowiedz: true
+        });
+      }
+      if (isAdmin) {
+        await update(ref(db, `notifications/${userId}/${notificationId}`), {
+          odczytano: false
+        });
+      }
     } catch (error) {
       console.error('Error saving response:', error);
     }
   };
+  
+  
 
   const renderResponseItem = ({ item }) => {
     const isCurrentUser = userId === currentUserUid;

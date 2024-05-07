@@ -6,6 +6,57 @@ import { auth, db } from '../../../components/configs/firebase-config';
 import { getDatabase, ref, child, get } from "firebase/database";
 import { Link } from 'expo-router';
 
+const fetchNotifications = async (isAdmin) => {
+  try {
+    const userId = auth.currentUser.uid;
+    let notificationsData = [];
+
+    if (isAdmin) {
+      const usersRef = ref(db, 'users');
+      const usersSnapshot = await get(usersRef);
+
+      if (usersSnapshot.exists()) {
+        const users = usersSnapshot.val();
+        const userIds = Object.keys(users);
+
+        for (const uid of userIds) {
+          const userNotificationsRef = ref(db, `notifications/${uid}`);
+          const userNotificationsSnapshot = await get(userNotificationsRef);
+
+          if (userNotificationsSnapshot.exists()) {
+            const userNotifications = userNotificationsSnapshot.val();
+            const userNotificationsArray = Object.entries(userNotifications);
+            const notificationsWithUser = userNotificationsArray.map(([notificationId, notification]) => ({
+              id: notificationId,
+              ...notification,
+              userId: uid,
+              userData: users[uid]
+            }));
+            notificationsData = [...notificationsData, ...notificationsWithUser];
+          }
+        }
+      }
+    } else {
+      const notificationsRef = ref(db, `notifications/${userId}/`);
+      const snapshot = await get(notificationsRef);
+
+      if (snapshot.exists()) {
+        const fetchedNotificationsData = snapshot.val();
+        const notificationsArray = Object.entries(fetchedNotificationsData);
+        notificationsData = notificationsArray.map(([notificationId, notification]) => ({
+          id: notificationId,
+          ...notification
+        }));
+      }
+    }
+
+    return notificationsData;
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    throw error;
+  }
+};
+
 export default function HistoryPage() {
   const [notifications, setNotifications] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -33,86 +84,55 @@ export default function HistoryPage() {
   }, []);
 
   useEffect(() => {
-    const fetchNotifications = async () => {
+    const loadNotifications = async () => {
       try {
-        const userId = auth.currentUser.uid;
-        let notificationsData = [];
-  
-        if (isAdmin) {
-          const usersRef = ref(db, 'users');
-          const usersSnapshot = await get(usersRef);
-  
-          if (usersSnapshot.exists()) {
-            const users = usersSnapshot.val();
-            const userIds = Object.keys(users);
-  
-            for (const uid of userIds) {
-              const userNotificationsRef = ref(db, `notifications/${uid}`);
-              const userNotificationsSnapshot = await get(userNotificationsRef);
-  
-              if (userNotificationsSnapshot.exists()) {
-                const userNotifications = userNotificationsSnapshot.val();
-                const userNotificationsArray = Object.entries(userNotifications); // Use entries instead of values to preserve keys
-                const notificationsWithUser = userNotificationsArray.map(([notificationId, notification]) => ({
-                  id: notificationId,
-                  ...notification,
-                  userId: uid,
-                  userData: users[uid]
-                }));
-                notificationsData = [...notificationsData, ...notificationsWithUser];
-              }
-            }
-          }
-        } else {
-          const notificationsRef = ref(db, `notifications/${userId}/`);
-          const snapshot = await get(notificationsRef);
-  
-          if (snapshot.exists()) {
-            const fetchedNotificationsData = snapshot.val();
-            const notificationsArray = Object.entries(fetchedNotificationsData); // Use entries instead of values to preserve keys
-            notificationsData = notificationsArray.map(([notificationId, notification]) => ({
-              id: notificationId,
-              ...notification
-            }));
-          }
-        }
-  
+        const notificationsData = await fetchNotifications(isAdmin);
         setNotifications(notificationsData);
       } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error('Error loading notifications:', error);
       }
     };
-  
-    fetchNotifications();
+
+    loadNotifications();
   }, [isAdmin]);
-  
 
   const toggleSortOrder = () => {
     setSortDescending(!sortDescending);
   };
-  
+
+  const refreshNotifications = async () => {
+    try {
+      const notificationsData = await fetchNotifications(isAdmin);
+      setNotifications(notificationsData);
+    } catch (error) {
+      console.error('Error refreshing notifications:', error);
+    }
+  };
 
   const renderNotificationItem = ({ item }) => {
     const notificationDate = new Date(item.czas).toLocaleString();
     const isUnread = item.odczytano === false;
-  
+    const isNewResponse = isAdmin && item.nowaOdpowiedz === true;
+
     return (
-      <View style={[styles.notificationItem, isUnread && styles.unreadNotification]}>
+      <View style={[styles.notificationItem, isUnread && styles.unreadNotification, isNewResponse && styles.newResponseNotification]}>
         {isAdmin && item.userData && item.userData.email ? (
           <Text>{item.userData.email}</Text>
         ) : null}
         <Text style={styles.notificationTitle}>{item.tytul}</Text>
         <Text style={styles.notificationText}>{item.tresc}</Text>
         <Text style={styles.notificationDate}>Data: {notificationDate}</Text>
-        <Link
-          href={`/(drawer)/history/details?uid=${item.userId}&id=${item.id}`}
-        >
-          <Text style={styles.openButton}>Otwórz</Text>
-        </Link>
+        <View style={styles.buttonContainer}>
+          <Link
+            href={`/(drawer)/history/details?uid=${item.userId}&id=${item.id}`}
+          >
+            <Text style={styles.openButton}>Otwórz</Text>
+          </Link>
+          {isNewResponse && <Text style={styles.newResponseText}>Nowa odpowiedź</Text>}
+        </View>
       </View>
     );
   };
-  
 
   return (
     <View style={styles.container}>
@@ -127,6 +147,10 @@ export default function HistoryPage() {
         <Button
           title={sortDescending ? 'Od najstarszych' : 'Od najnowszych'}
           onPress={toggleSortOrder}
+        />
+        <Button
+          title="Odśwież"
+          onPress={refreshNotifications}
         />
       </View>
       <FlatList
@@ -174,6 +198,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   unreadNotification: {
-    backgroundColor: "#ffcccc", // or any other color to indicate unread status
+    backgroundColor: "#ffcccc",
+  },
+  newResponseText: {
+    color: 'red',
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
