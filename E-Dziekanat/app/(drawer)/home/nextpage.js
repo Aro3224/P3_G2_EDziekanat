@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, TextInput, Button, FlatList } from 'react-native';
+import { Text, View, StyleSheet, TextInput, ScrollView, FlatList } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { db } from '../../../components/configs/firebase-config';
 import { ref, get, child, set, push, serverTimestamp, onValue } from "firebase/database";
 import { useRoute } from '@react-navigation/native';
 import { auth } from '../../../components/configs/firebase-config';
+import { PageTitle, SubTitle, StyledButton, ButtonText } from '../../../components/styles';
 
 export default function NextPage() {
   const [notificationContent, setNotificationContent] = useState('');
   const [notificationTitle, setNotificationTitle] = useState('');
+  const [notificationDate, setNotificationDate] = useState('');
   const [response, setResponse] = useState('');
   const [responses, setResponses] = useState([]);
   const route = useRoute();
@@ -66,10 +68,26 @@ export default function NextPage() {
       });
     };
 
+    const fetchDate = async () => {
+      try {
+        const dbRef = ref(db, `notifications/${auth.currentUser.uid}/${notificationId}`);
+        const snapshot = await get(child(dbRef, 'czas'));
+        if (snapshot.exists()) {
+          const czasOtrzymania = new Date(snapshot.val()).toLocaleString();
+          setNotificationDate(czasOtrzymania);
+        } else {
+          console.log("Brak danych dla tego id wiadomości");
+        }
+      } catch (error) {
+        console.error('Błąd podczas pobierania daty wysłania powiadomienia:', error);
+      }
+    };
+
     fetchNotificationContent();
     fetchNotificationTitle();
     updateReadStatus();
     fetchResponses();
+    fetchDate();
   }, [notificationId]);
 
   const handleSendResponse = async () => {
@@ -95,6 +113,7 @@ export default function NextPage() {
 
 
   return (
+    <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={styles.container}>
        <Drawer.Screen
         options={{
@@ -102,13 +121,15 @@ export default function NextPage() {
           headerShown: true,
         }}
       />
-      <Text style={styles.title}>{notificationTitle}</Text>
+      <PageTitle style={{marginBottom: 10}}>{notificationTitle}</PageTitle>
       <Text style={styles.content}>{notificationContent}</Text>
       <FlatList
         data={responses}
         renderItem={renderResponseItem}
         keyExtractor={(item, index) => index.toString()}
+        
       />
+      <Text style={{marginBottom: 30}}>Otrzymano: {notificationDate}</Text>
       <TextInput
         style={styles.input}
         onChangeText={setResponse}
@@ -117,21 +138,22 @@ export default function NextPage() {
         multiline={true}
         numberOfLines={4}
       />
-      <Button title="Wyślij" onPress={handleSendResponse} />
+      <StyledButton onPress={handleSendResponse}>
+        <ButtonText>Wyślij</ButtonText>
+      </StyledButton>
     </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    padding: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    padding: 30,
   },
   content: {
     fontSize: 16,

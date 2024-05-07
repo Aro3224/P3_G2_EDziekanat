@@ -1,24 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, FlatList, Platform, Alert } from 'react-native';
+import { Text, View, StyleSheet, Platform, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
-import { Link } from 'expo-router';
 import { auth, db } from '../../../components/configs/firebase-config';
-import { getDatabase, ref, set, query, orderByChild, equalTo, onValue } from "firebase/database";
+import { getDatabase, ref, set, query, orderByChild, equalTo, onValue, get } from "firebase/database";
 import Timer from '../../../components/timer';
 import { useNavigation } from '@react-navigation/native';
 import messaging from '@react-native-firebase/messaging';
 import { getMessaging, getToken } from "firebase/messaging";
+import { PageTitle, SubTitle } from '../../../components/styles';
 
 export default function HomePage() {
   const [userEmail, setUserEmail] = useState(null);
   const [unreadNotifications, setUnreadNotifications] = useState([]);
   const navigation = useNavigation();
+  const [userName, setUserName] = useState(null);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const user = auth.currentUser;
+        setUserId(user?.uid || null)
+        const path = 'users/'+ user?.uid;
+        const snapshot = await get(ref(db, path));
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          setUserName(userData?.Imie || '');
+        }
         if (user) {
           setUserEmail(user.email);
         }
@@ -122,63 +131,81 @@ export default function HomePage() {
   };
 
   return (
+    <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={styles.container}>
-      <Timer />
       <Drawer.Screen
         options={{
           title: "Strona główna",
           headerShown: true,
           headerLeft: () => <DrawerToggleButton />
         }} />
-      <Text>{`Witaj ${userEmail || ''}`}</Text>
-      <View style={styles.notificationContainer}>
-        <FlatList
-          data={unreadNotifications}
-          renderItem={({ item }) => (
-            <View style={styles.notificationItem}>
+      <PageTitle>{`Witaj ${userName || ''}!`}</PageTitle>
+      <SubTitle>w E-dziekanacie</SubTitle>
+      <Timer />
+      <View style={styles.upperPanel}>
+          <Text style={styles.sectionTitle}>Nieodczytane Powiadomienia:</Text>
+          {unreadNotifications.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.notificationItem
+              ]}
+              onPress={() => navigation.navigate('nextpage', { id: item.id })}
+            >
               <Text style={styles.notificationTitle}>{item.tytul}</Text>
               <Text style={styles.notificationTime}>{item.czas}</Text>
-              <Link
-                href={`/(drawer)/home/nextpage?id=${item.id}`}
-                onPress={() => navigation.navigate('nextpage', { notificationContent: item.tresc })}
-              >
-                <Text style={styles.openButton}>Otwórz</Text>
-              </Link>
-            </View>
-          )}
-          keyExtractor={(item, index) => index.toString()}
-        />
-      </View>
+            </TouchableOpacity>
+          ))}
+        </View>
     </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
-  notificationContainer: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  notificationFrame: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
+  upperPanel: {
+    width: '80%',
+    backgroundColor: '#f0f0f0',
+    marginBottom: 10,
+    borderRadius: 10,
+    paddingVertical: 10,
+    marginTop: 30,
   },
   notificationItem: {
-    backgroundColor: "#eee",
-    padding: 10,
-    marginBottom: 10,
+    width: '100%',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#dcdcdc',
     borderRadius: 5,
+    marginBottom: 10,
+  },
+  selectedGroupItem: {
+    backgroundColor: '#6D28D9',
   },
   notificationTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
+  },
+  notificationTime: {
+    fontSize: 14,
+    color: '#666',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    marginLeft: 5,
   },
 });
