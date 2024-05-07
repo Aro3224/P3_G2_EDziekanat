@@ -160,8 +160,8 @@ return (
               <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
             ) : (
               <>
-                <Text style={[styles.userID, selectedUser === item.id && styles.selectedText]}>{item.id}</Text>
                 <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
+                <Text style={[styles.userID, selectedUser === item.id && styles.selectedText]}>{item.id}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -239,6 +239,7 @@ userID: {
 },
 userEmail: {
   fontSize: 14,
+  fontWeight: 'bold',
 },
 sectionTitle: {
   fontSize: 18,

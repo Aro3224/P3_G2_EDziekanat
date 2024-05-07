@@ -139,8 +139,8 @@ export default function EditGroupPage() {
                     <Text style={[styles.userName, checkedUsers[item.id] && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
                   ) : (
                     <>
-                      <Text style={[styles.userID, checkedUsers[item.id] && styles.selectedText]}>{item.email}</Text>
                       <Text style={[styles.userName, checkedUsers[item.id] && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                      <Text style={[styles.userID, checkedUsers[item.id] && styles.selectedText]}>{item.email}</Text>
                     </>
                   )}
               
@@ -206,6 +206,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 14,
+    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 18,

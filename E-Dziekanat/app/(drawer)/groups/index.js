@@ -138,11 +138,11 @@ export default function GroupPage() {
               onPress={() => selectGroup(item.id)}
             >
               {Platform.OS !== 'web' ? (
-                <Text style={[styles.groupEmail, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+                <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
               ) : (
                 <>
-                  <Text style={[styles.groupMembers, selectedGroup === item.id && styles.selectedText]}>{item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
                   <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+                  <Text style={[styles.groupMembers, selectedGroup === item.id && styles.selectedText]}>{item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -215,6 +215,7 @@ const styles = StyleSheet.create({
   },
   groupID: {
     fontSize: 14,
+    fontWeight: 'bold',
   },
   groupMembers: {
     fontSize: 14,

@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, Pressable, TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
-import { Link, Redirect } from 'expo-router';
+import { Link } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
-import { getDatabase, onValue, ref, set, remove, update, get } from "firebase/database";
+import { onValue, ref, remove, update, get } from "firebase/database";
+import { PageTitle, StyledButton, ButtonText } from '../../../components/styles';
 
 export default function TemplatesPage() {
 
   const [templates, setTemplates] = useState([]);
   const [redirect, setRedirect] = useState(false);
-  const [showDeleteButton, setShowDeleteButton] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   useEffect(() => {
     const templatesRef = ref(db,'/templates');
@@ -39,6 +40,7 @@ export default function TemplatesPage() {
           onPress: async () => {
             try {
               await remove(ref(db, `/templates/${templateId}`));
+              setSelectedTemplate(null);
               console.log('Szablon został usunięty z bazy danych.');
             } catch (error) {
               console.error('Błąd podczas usuwania szablonu:', error);
@@ -58,6 +60,7 @@ export default function TemplatesPage() {
       try {
         remove(ref(db, `/templates/${templateId}`))
           .then(() => {
+            setSelectedTemplate(null);
             console.log('Szablon został usunięty z bazy danych.');
           })
           .catch((error) => {
@@ -72,6 +75,7 @@ export default function TemplatesPage() {
   };
   
   const handleSetTemplateInUse = (templateId) => {
+    setSelectedTemplate(templateId);
     const updatedTemplates = templates.map(template => ({
       ...template,
       inUse: template.id === templateId
@@ -117,45 +121,48 @@ export default function TemplatesPage() {
   }
 
   return (
+    <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={styles.container}>
       <Drawer.Screen 
         options={{ 
           title:"Szablony", 
           headerShown: true, 
           headerLeft: ()=> <DrawerToggleButton/>}} />
-      <Text style={styles.title}>Szablony</Text>
+      <PageTitle>Szablony</PageTitle>
       <Link href="/(drawer)/templates/add_template" asChild style={styles.button}>
         <Pressable>
           <Text style={styles.buttonText}>Dodaj szablon</Text>
         </Pressable>
       </Link>
-      <View style={styles.templatesContainer}>
-        {templates.map(template => (
+      <View style={styles.upperPanel}>
+        <Text style={styles.sectionTitle}>Wybierz szablon:</Text>
+        {templates.map((template) => (
           <TouchableOpacity
             key={template.id}
-            onPress={() => handleSetTemplateInUse(template.id)}
             style={[
               styles.templateItem,
-              template.inUse && styles.selectedTemplateItem
+              selectedTemplate === template.id && styles.selectedTemplateItem
             ]}
-            onMouseEnter={() => setShowDeleteButton(template.id)}
-            onMouseLeave={() => setShowDeleteButton(null)}
+            onPress={() => handleSetTemplateInUse(template.id)}
           >
-            <Text style={styles.templateTitle}>{template.title}</Text>
-            <ScrollView style={{ maxHeight: 100 }}> 
-              <Text style={styles.templateContent}>{template.content}</Text>
+            <Text style={[styles.templateTitle, selectedTemplate === template.id && styles.selectedText]}>{template.title}</Text>
+            <View>
+            <ScrollView style={{ maxHeight: 100, maxWidth: 400 }}> 
+              <Text style={[selectedTemplate === template.id && styles.selectedText]}>{template.content}</Text>
             </ScrollView>
-            {!template.inUse && showDeleteButton === template.id && (
-              <View style={styles.deleteButtonContainer}>
-                <TouchableOpacity onPress={() => Platform.OS == "web" ? handleDeleteTemplateWeb(template.id) : handleDeleteTemplate(template.id)}>
-                  <Text style={styles.deleteButtonText}>Usuń</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            </View>
           </TouchableOpacity>
         ))}
       </View>
+      <View style={styles.buttonContainer}>
+        {selectedTemplate && (
+          <StyledButton onPress={() => Platform.OS == "web" ? handleDeleteTemplateWeb(selectedTemplate) : handleDeleteTemplate(selectedTemplate)}>
+            <ButtonText>Usuń</ButtonText>
+          </StyledButton>
+        )}
+      </View>
     </View>
+    </ScrollView>
   );
 }
 
@@ -167,55 +174,64 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
-  button: {
-    backgroundColor: "#007bff", 
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
+  upperPanel: {
+    width: '80%',
+    backgroundColor: '#f0f0f0',
+    marginBottom: 10,
+    borderRadius: 10,
     paddingVertical: 10,
+    marginTop: 30,
+  },
+  templateItem: {
+    width: '100%',
+    paddingVertical: 15,
     paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#dcdcdc',
     borderRadius: 5,
-    marginVertical: 10,
+    marginBottom: 5,
+    flexWrap: 'wrap',
+  },
+  selectedTemplateItem: {
+    backgroundColor: '#6D28D9',
+  },
+  templateTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    marginLeft: 5,
+  },
+  button: {
+    backgroundColor: "#6D28D9", 
+    padding: 15,
+    borderRadius: 5,
+    marginVertical: 5,
+    marginHorizontal: 15,
+    height: 50,
+    justifyContent: 'center',
   },
   buttonText: {
-    color: "#fff", 
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  selectedText: {
+    color: '#fff',
   },
-  templatesContainer: {
+  buttonContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    width: '83%',
+    paddingHorizontal: 20,
+    marginTop: 15,
+    justifyContent: 'center'
   },
-  templateItem: {
-    backgroundColor: '#eee',
-    padding: 10,
-    margin: 5,
-    borderRadius: 5,
-    width: '45%', 
-    height: 110, 
-  },
-  selectedTemplateItem: {
-    backgroundColor: '#aaf',
-  },
-  templateTitle: {
-    fontWeight: 'bold',
-  },
-  templateContent: {
-    marginTop: 5,
-  },
-  deleteButton: {
-    color: 'red',
-    marginTop: 5,
-  },
-  deleteButtonContainer: {
-    alignSelf: 'flex-start', // Align to the start of the parent container
-  },
-  deleteButtonText: {
-    color: 'red',
-    marginTop: 5,
-  },
-  
 });

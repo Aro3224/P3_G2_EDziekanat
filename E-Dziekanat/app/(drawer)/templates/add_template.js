@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Button,SafeAreaView, TextInput, Alert } from 'react-native';
+import { View, StyleSheet, Alert, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
-import { DrawerToggleButton } from '@react-navigation/drawer';
-import { Link } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { getDatabase, ref, set, push, get } from "firebase/database";
+import { ref, set, push, get } from "firebase/database";
+import { MsgBox, StyledButton, ButtonText, StyledTextInput, PageTitle, StyledInputLabel } from '../../../components/styles';
 
 
 
 export default function AddTemplatePage() {
   const [templateTitle, onChangeTitle] = useState('');
   const [templateContent, onChangeContent] = useState('');
-  const [titleError, setTitleError] = useState('');
-  const [contentError, setContentError] = useState('');
+  const [message, setMessage] = useState("");
   const [redirect, setRedirect] = useState(false);
 
   const validateTitle = (title) => {
@@ -25,16 +22,15 @@ export default function AddTemplatePage() {
   };
 
   const addTemplate = () => {
-    setTitleError('');
-    setContentError('');
+    setMessage('');
 
     if (!validateTitle(templateTitle)) {
-      setTitleError('Tytuł nie może być pusty.');
+      setMessage('Tytuł nie może być pusty.');
       return;
     }
 
     if (!validateContent(templateContent)) {
-      setContentError('Treść powiadomienia nie może być pusta.');
+      setMessage('Treść powiadomienia nie może być pusta.');
       return;
     }
 
@@ -53,6 +49,7 @@ export default function AddTemplatePage() {
       onChangeTitle("");
       onChangeContent("");
       Alert.alert("Dodano szablon","Szablon został dodany do systemu")
+      alert("Szablon został dodany do systemu")
       })
 
       
@@ -89,44 +86,64 @@ export default function AddTemplatePage() {
   }
 
   return (
+    <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={styles.container}>
       <Drawer.Screen 
       options={{ 
         title:"Dodaj szablon", 
         headerShown: true, 
         }}/>
-      <SafeAreaView>
-        <Text>Podaj tytuł:</Text>
-        <TextInput
-          //style={styles.input}
-          onChangeText={onChangeTitle}
-          value={templateTitle}
-          placeholder='Tytuł'
-        />
-        <Text style={styles.errorText}>{titleError}</Text>
-        <Text>Wpisz treść powiadomienia:</Text>
-        <TextInput
-          //style={styles.input}
-          onChangeText={onChangeContent}
-          value={templateContent}
-          placeholder="Treść powiadomienia"
-        />
-        <Text style={styles.errorText}>{contentError}</Text>
-      </SafeAreaView>
-      <Button title='Dodaj' onPress={addTemplate}/>
+        <PageTitle>Dodaj szablon</PageTitle>
+          <StyledInputLabel>Tytuł szablonu</StyledInputLabel>
+          <StyledTextInput 
+            style={styles.input}
+            onChangeText={onChangeTitle}
+            value={templateTitle}
+            placeholder='Tytuł'
+          />
+          <StyledInputLabel>Treść</StyledInputLabel>
+          <StyledTextInput 
+            style={styles.input}
+            onChangeText={onChangeContent}
+            value={templateContent}
+            placeholder="Treść powiadomienia"
+          />
+      <StyledButton onPress={addTemplate}>
+        <ButtonText>Dodaj</ButtonText>
+      </StyledButton>
+      <MsgBox style={styles.errorMessage}>{message}</MsgBox>
     </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
-  errorText: {
+  errorMessage: {
     color: 'red',
-    marginBottom: 10,
-  },
+    fontSize: 18,
+},
+inputContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 20,
+},
+input: {
+  width: '50%',
+  borderWidth: 1,
+  borderColor: '#ccc',
+  paddingHorizontal: 10,
+  marginBottom: 20,
+},
+inputLocked: {
+  borderColor: 'orange'
+},
 });

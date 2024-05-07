@@ -158,8 +158,8 @@ export default function EditButtonPage() {
                     <Text style={[styles.userName, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
                     ) : (
                     <>
-                        <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
                         <Text style={[styles.userName, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                        <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
                     </>
                     )}
                 </TouchableOpacity>
@@ -180,8 +180,8 @@ export default function EditButtonPage() {
                         <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
                     ) : (
                         <>
-                        <Text style={[styles.groupMembers, selectedGroup === item.id && styles.selectedText]}>{item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
                         <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+                        <Text style={[styles.groupMembers, selectedGroup === item.id && styles.selectedText]}>{item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
                         </>
                     )}
                     </TouchableOpacity>

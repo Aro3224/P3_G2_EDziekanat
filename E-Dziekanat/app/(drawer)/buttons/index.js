@@ -180,8 +180,8 @@ export default function ButtonsPage() {
               <Text style={[styles.buttonID, selectedButton === button.id && styles.selectedText]}>Przycisk {button.id}</Text>
             ) : (
               <>
-                <Text style={[styles.buttonMember, selectedButton === button.id && styles.selectedText]}>{button.email === '' ? 'Nie przypisano' : button.email}</Text>
                 <Text style={[styles.buttonID, selectedButton === button.id && styles.selectedText]}>Przycisk {button.id}</Text>
+                <Text style={[styles.buttonMember, selectedButton === button.id && styles.selectedText]}>{button.email === '' ? 'Nie przypisano' : button.email}</Text>
               </>
             )}
           </TouchableOpacity>
