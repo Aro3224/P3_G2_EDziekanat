@@ -187,23 +187,38 @@ export default function SendMessagePage() {
     }
   };
 
-  const fetchGroups = () => {
-    const groupsRef = ref(db, 'groups');
-    onValue(groupsRef, (snapshot) => {
+  const fetchGroups = async () => {
+    try {
+      const groupsRef = ref(db, 'groups');
+      const snapshot = await get(groupsRef);
       const groupsData = snapshot.val();
       if (groupsData) {
-        const groupsArray = Object.keys(groupsData).map((groupName) => {
+        const groupsArray = Object.keys(groupsData).map(async (groupName) => {
           const group = groupsData[groupName];
+          const groupUsersRef = ref(db, `groups/${groupName}/Users`);
+          const groupUsersSnapshot = await get(groupUsersRef);
+          const groupUsersData = groupUsersSnapshot.val();
+          console.log(`Dane użytkowników dla grupy ${groupName}:`, groupUsersData); // Dodaj ten log
+          const members = group.members && group.members.map((member: { id: string }) => member.id); // Dodaj warunek
           return {
             id: groupName,
-            members: group.members || [],
+            members: members || [], // Domyślnie ustaw pustą tablicę, jeśli group.members jest undefined
           };
         });
-        setGroups(groupsArray);
+        const resolvedGroupsArray = await Promise.all(groupsArray);
+        setGroups(resolvedGroupsArray);
       }
-    });
+    } catch (error) {
+      console.error('Błąd podczas pobierania grup:', error);
+    }
   };
-
+  
+  
+  
+  const selectGroup = (group: Group) => {
+    group.members.forEach(memberId => toggleUserSelection(memberId));
+  };
+  
   if (redirect) {
     const link = document.createElement('a');
     link.href = "/(drawer)/home";
@@ -244,16 +259,17 @@ export default function SendMessagePage() {
             <Text style={styles.sectionTitle}>Wybierz grupy:</Text>
             {groups.map((group) => (
               <TouchableOpacity
-                key={group.id}
-                style={[
-                  styles.groupOption,
-                ]}
-                onPress={() => {
-                  group.members.forEach(memberId => toggleUserSelection(memberId));
-                }}
-              >
-                <Text>{group.id}</Text>
-              </TouchableOpacity>
+              key={group.id}
+              style={[
+                styles.groupOption,
+              ]}
+              onPress={async () => {
+                await fetchGroups(); // Wywołaj funkcję fetchGroups
+                group.members.forEach(memberId => toggleUserSelection(memberId));
+              }}
+            >
+              <Text>{group.id}</Text>
+            </TouchableOpacity>
             ))}
           </View>
           {/* Panel wyboru szablonu wiadomości */}
