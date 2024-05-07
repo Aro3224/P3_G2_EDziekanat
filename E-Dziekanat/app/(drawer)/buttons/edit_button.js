@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity,FlatList } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useRoute } from '@react-navigation/native';
 import { ref, get, onValue, set } from 'firebase/database';
 import { db, auth } from '../../../components/configs/firebase-config';
-import { MaterialIcons } from '@expo/vector-icons';
+import { StyledButton, ButtonText, PageTitle } from '../../../components/styles';
 
 
 export default function EditButtonPage() {
     const route = useRoute();
     const buttonId = route.params?.id;
     const path = 'buttons/'+ buttonId;
-    const [userID, setUserID] = useState("");
     const [loading, setLoading] = useState(true);
-    const [userEmails, setUserEmails] = useState([]);
     const [selectedUser, setSelectedUser] = useState("")
     const [selectedGroup, setSelectedGroup] = useState("")
     const [groups, setGroups] = useState([]);
     const [redirect, setRedirect] = useState(false);
+    const [users, setUsers] = useState([]);
 
 
     useEffect(() => {
@@ -27,7 +26,8 @@ export default function EditButtonPage() {
                 const snapshot = await get(ref(db, path));
                 if (snapshot.exists()) {
                     const buttonData = snapshot.val();
-                    setUserID(buttonData?.userID || '');
+                    setSelectedUser(buttonData?.userID || '');
+                    setSelectedGroup(buttonData?.userID || '');
                 } else {
                     alert("Przycisk nie istnieje");
                 }
@@ -39,45 +39,37 @@ export default function EditButtonPage() {
         };
         readData();
 
-        const fetchData = async () => {
-            try {
-                const usersRef = ref(db, 'users');
-                onValue(usersRef, (snapshot) => {
-                    const users = [];
-                    snapshot.forEach((childSnapshot) => {
-                        const userId = childSnapshot.key;
-                        const email = childSnapshot.val().email;
-                        users.push({ id: userId, email });
-                    });
-                    setUserEmails(users);
-                    setLoading(false);
-                });
-            } catch (error) {
-                console.error('Error:', error);
-                setLoading(false);
+        const usersRef = ref(db,'/users');
+        onValue(usersRef, (snapshot) => {
+            const usersData = snapshot.val();
+            if (usersData) {
+            const usersArray = Object.keys(usersData).map(key => ({
+                id: key,
+                ...usersData[key]
+            }));
+            setUsers(usersArray);
             }
-        };
-        fetchData();
+        });
 
-        const fetchGroups = async () => {
-            try {
-                const groupsRef = ref(db, 'groups');
-                const snapshot = await get(groupsRef);
-                if (snapshot.exists()) {
-                    const groupsData = [];
-                    snapshot.forEach((childSnapshot) => {
-                        const groupId = childSnapshot.key;
-                        const groupData = childSnapshot.val();
-                        groupsData.push({ id: groupId, ...groupData });
-                    });
-                    setGroups(groupsData);
-                }
-            } catch (error) {
-                console.error('Error fetching groups:', error);
-            }
-        };
-
-        fetchGroups();
+        const groupsRef = ref(db, '/groups');
+        onValue(groupsRef, async (snapshot) => {
+        const groupsData = snapshot.val();
+        if (groupsData) {
+            const groupsArray = await Promise.all(Object.keys(groupsData).map(async key => {
+            const users = groupsData[key].Users || [];
+            const usersDetails = await Promise.all(users.map(async userID => {
+                const userSnapshot = await get(ref(db, `users/${userID}`));
+                const userData = userSnapshot.val();
+                return `${userData?.Imie} ${userData?.Nazwisko}`;
+            }));
+            return {
+                id: key,
+                users: usersDetails
+            };
+            }));
+            setGroups(groupsArray);
+        }
+        });
 
         const fetchUserRole = async () => {
             try {
@@ -142,6 +134,7 @@ export default function EditButtonPage() {
 
     
     return (
+        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <View style={styles.container}>
              <Drawer.Screen 
                 options={{ 
@@ -149,44 +142,63 @@ export default function EditButtonPage() {
                     headerShown: true, 
                 }}
             />
-            <Text style={styles.title}>Edytuj Przycisk {buttonId}</Text>
-            <View style={styles.listContainer}>
-                <View style={styles.section}>
-                    <Text style={styles.subtitle}>Użytkownicy</Text>
-                    <FlatList
-                        data={userEmails}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity onPress={() => selectUser(item.id)}>
-                                <Text style={[styles.item, item.id === selectedUser ? styles.selectedItem : null]}>{item.email}</Text>
-                            </TouchableOpacity>
-                        )}
-                        keyExtractor={(item, index) => index.toString()}
-                    />
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.subtitle}>Grupy</Text>
-                    <FlatList
-                        data={groups}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity onPress={() => selectGroup(item.id)}>
-                                <Text style={[styles.item, item.id === selectedGroup ? styles.selectedItem : null]}>{item.id}</Text>
-                            </TouchableOpacity>
-                        )}
-                        keyExtractor={(item, index) => index.toString()}
-                    />
-                </View>
+            <PageTitle >Edytuj Przycisk {buttonId}</PageTitle >
+            <View style={styles.upperPanel}>
+                <Text style={styles.sectionTitle}>Wybierz użytkownika:</Text>
+                {users.map((item) => (
+                <TouchableOpacity
+                    key={item.id}
+                    style={[
+                    styles.item,
+                    selectedUser === item.id && styles.selectedItem
+                    ]}
+                    onPress={() => selectUser(item.id)}
+                >
+                    {Platform.OS !== 'web' ? (
+                    <Text style={[styles.userName, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                    ) : (
+                    <>
+                        <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
+                        <Text style={[styles.userName, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                    </>
+                    )}
+                </TouchableOpacity>
+                ))}
             </View>
-
-            <TouchableOpacity style={styles.button} onPress={editButton}>
-                <Text style={styles.buttonText}>Zapisz</Text>
-                <MaterialIcons name="save" size={24} color="white" />
-            </TouchableOpacity>
+            <View style={styles.upperPanel}>
+                <Text style={styles.sectionTitle}>Wybierz grupę:</Text>
+                {groups.map((item) => (
+                    <TouchableOpacity
+                    key={item.id}
+                    style={[
+                        styles.item,
+                        selectedGroup === item.id && styles.selectedItem
+                    ]}
+                    onPress={() => selectGroup(item.id)}
+                    >
+                    {Platform.OS !== 'web' ? (
+                        <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+                    ) : (
+                        <>
+                        <Text style={[styles.groupMembers, selectedGroup === item.id && styles.selectedText]}>{item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
+                        <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+                        </>
+                    )}
+                    </TouchableOpacity>
+                ))}
+                </View>
+            <StyledButton onPress={editButton}>
+                <ButtonText>Zapisz</ButtonText>
+            </StyledButton>
         </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
+    scrollViewContainer: {
+        flexGrow: 1,
+      },
     container: {
         flex: 1,
         backgroundColor: "#fff",
@@ -194,49 +206,65 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         padding: 20,
     },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
-    listContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    section: {
-        width: '48%',
-    },
-    subtitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+    upperPanel: {
+        width: '80%',
+        backgroundColor: '#f0f0f0',
         marginBottom: 10,
+        borderRadius: 10,
+        paddingVertical: 10,
+        marginTop: 30,
     },
     item: {
-        fontSize: 16,
-        marginBottom: 5,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        borderWidth: 1,
-        borderColor: '#ccc',
+        width: '100%',
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#dcdcdc',
         borderRadius: 5,
+        marginBottom: 5,
     },
     selectedItem: {
-        backgroundColor: 'lightblue',
+        backgroundColor: '#6D28D9',
+    },
+    userEmail: {
+        fontSize: 14,
+        color: '#666',
+    },
+    userName: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    groupID: {
+        fontSize: 14,
+        fontWeight: 'bold',
+      },
+      groupMembers: {
+        fontSize: 14,
+        color: '#666',
+      },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 5,
+        marginLeft: 5,
     },
     button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: "#007bff", 
-        paddingVertical: 10,
-        paddingHorizontal: 20,
+        backgroundColor: "#6D28D9", 
+        padding: 15,
         borderRadius: 5,
-        marginTop: 20,
+        marginVertical: 5,
+        marginHorizontal: 15,
+        height: 50,
+        justifyContent: 'center',
     },
     buttonText: {
-        color: "#fff", 
+        color: "#fff",
         fontSize: 16,
         fontWeight: "bold",
-        marginRight: 10,
+    },
+    selectedText: {
+        color: '#fff',
     },
 });

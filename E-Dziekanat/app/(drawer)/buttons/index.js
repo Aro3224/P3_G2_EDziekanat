@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Pressable,TouchableOpacity, Platform, Alert } from 'react-native';
+import { Text, View, StyleSheet, Pressable,TouchableOpacity, Platform, Alert, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { Link, Redirect } from 'expo-router';
 import { db, auth } from '../../../components/configs/firebase-config';
 import { onValue, ref, set, remove, get } from "firebase/database";
+import { StyledButton, ButtonText, PageTitle } from '../../../components/styles';
 
 export default function ButtonsPage() {
 
   const [buttons, setButtons] = useState([]);
   const [newButtonData, setNewButtonData] = useState({userID: ''});
   const [redirect, setRedirect] = useState(false);
+  const [selectedButton, setSelectedButton] = useState(null);
 
   useEffect(() => {
     const buttonsRef = ref(db, '/buttons');
@@ -47,8 +49,6 @@ export default function ButtonsPage() {
   
   
 
-
-
   const handleDeleteTemplate = () => {
     Alert.alert(
       'Potwierdzenie',
@@ -63,6 +63,7 @@ export default function ButtonsPage() {
               await remove(ref(db, `/buttons/${maxId}`));
               const updatedButtons = buttons.filter(button => parseInt(button.id) !== maxId);
               setButtons(updatedButtons);
+              setSelectedButton(null);
               console.log(`Przycisk o największym ID (${maxId}) został usunięty z bazy danych.`);
             } catch (error) {
               console.error('Błąd podczas usuwania przycisku:', error);
@@ -85,6 +86,7 @@ export default function ButtonsPage() {
         await remove(ref(db, `/buttons/${maxId}`));
         const updatedButtons = buttons.filter(button => parseInt(button.id) !== maxId);
         setButtons(updatedButtons);
+        setSelectedButton(null);
         console.log(`Przycisk o największym ID (${maxId}) został usunięty z bazy danych.`);
       } catch (error) {
         console.error('Błąd podczas usuwania przycisku:', error);
@@ -92,6 +94,7 @@ export default function ButtonsPage() {
       }
     };
   }
+
   const addButton = async () => {
     try {
       const maxId = Math.max(...buttons.map(button => button.id));
@@ -132,41 +135,67 @@ export default function ButtonsPage() {
     link.click();
   }
 
+  const selectButton = (buttonId) => {
+    setSelectedButton(buttonId);
+    console.log('Przycisk: ' + buttonId)
+  };
+
   
   return (
+    <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={styles.container}>
       <Drawer.Screen 
         options={{ 
           title:"Przyciski", 
           headerShown: true, 
           headerLeft: ()=> <DrawerToggleButton/>}} />
-      <Text style={styles.title}>Przyciski</Text>
-        <Pressable style={styles.button} onPress={addButton}>
+      <PageTitle>Przyciski</PageTitle>
+      <View style={Platform.OS === "web" ? styles.buttonContainer : styles.buttonContainerOS}>
+      <Pressable style={styles.button} onPress={addButton}>
           <Text style={styles.buttonText}>Dodaj przycisk</Text>
         </Pressable>
-        <Pressable style={styles.deleteButton} onPress={Platform.OS == "web"?handleDeleteTemplateWeb:handleDeleteTemplate}>
-          <Text style={styles.buttonText}>Usuń przycisk</Text>
-        </Pressable>
-      <View style={styles.templatesContainer}>
-        {buttons.map(button => (
-          <View
+        <StyledButton onPress={Platform.OS == "web"?handleDeleteTemplateWeb:handleDeleteTemplate}>
+            <ButtonText>Usuń ostatni przycisk</ButtonText>
+          </StyledButton>
+          {selectedButton && (
+          <Link href={`/(drawer)/buttons/edit_button?id=${selectedButton}`} asChild style={styles.button}>
+            <Pressable>
+              <Text style={styles.buttonText}>Edytuj wybrany przycisk</Text>
+            </Pressable>
+          </Link>
+        )}
+      </View>
+      <View style={styles.upperPanel}>
+        <Text style={styles.sectionTitle}>Wybierz przycisk:</Text>
+        {buttons.map((button) => (
+          <TouchableOpacity
             key={button.id}
-            style={styles.templateItem}
+            style={[
+              styles.buttonItem,
+              selectedButton === button.id && styles.selectedButtonItem
+            ]}
+            onPress={() => selectButton(button.id)}
           >
-            <Text style={styles.templateTitle}>Przycisk {button.id}</Text>
-            <Text style={styles.templateTitle}>Wykładowca: {button.email === '' ? 'Nie przypisano' : button.email}
-            </Text>
-            <Link href={`/(drawer)/buttons/edit_button?id=${button.id}`}>
-              <Text style={styles.editButton}>Edytuj</Text>
-            </Link>
-          </View>
+            {Platform.OS !== 'web' ? (
+              <Text style={[styles.buttonID, selectedButton === button.id && styles.selectedText]}>Przycisk {button.id}</Text>
+            ) : (
+              <>
+                <Text style={[styles.buttonMember, selectedButton === button.id && styles.selectedText]}>{button.email === '' ? 'Nie przypisano' : button.email}</Text>
+                <Text style={[styles.buttonID, selectedButton === button.id && styles.selectedText]}>Przycisk {button.id}</Text>
+              </>
+            )}
+          </TouchableOpacity>
         ))}
       </View>
     </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -174,52 +203,68 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
-  button: {
-    backgroundColor: "#007bff", 
+  upperPanel: {
+    width: '80%',
+    backgroundColor: '#f0f0f0',
+    marginBottom: 10,
+    borderRadius: 10,
     paddingVertical: 10,
+    marginTop: 30,
+  },
+  buttonItem: {
+    width: '100%',
+    paddingVertical: 15,
     paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#dcdcdc',
     borderRadius: 5,
-    marginVertical: 10,
+    marginBottom: 5,
+  },
+  selectedButtonItem: {
+    backgroundColor: '#6D28D9',
+  },
+  buttonMember: {
+    fontSize: 14,
+    color: '#666',
+  },
+  buttonID: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  selectedText: {
+    color: '#fff',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    marginLeft: 5,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    width: '83%',
+    paddingHorizontal: 20,
+    marginTop: 15,
+    justifyContent: 'flex-start'
+  },
+  buttonContainerOS: {
+    marginTop: 15,
+  },
+  button: {
+    backgroundColor: "#6D28D9", 
+    padding: 15,
+    borderRadius: 5,
+    marginVertical: 5,
+    marginHorizontal: 15,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   buttonText: {
-    color: "#fff", 
+    color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  templatesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  templateItem: {
-    backgroundColor: '#eee',
-    padding: 10,
-    margin: 5,
-    borderRadius: 5,
-    width: '45%',
-  },
-  selectedTemplateItem: {
-    backgroundColor: '#aaf',
-  },
-  templateTitle: {
-    fontWeight: 'bold',
-  },
-  templateContent: {
-    marginTop: 5,
-  },
-  deleteButton: {
-    backgroundColor: "red", 
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginVertical: 10,
-  },
-  editButton: {
-    color: 'blue',
+    fontWeight: "bold"
   },
 });
