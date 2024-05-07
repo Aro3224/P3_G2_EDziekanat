@@ -132,13 +132,11 @@ export default function SendMessagePage() {
           });
           console.log(response.data);
         }
-        if (userData && userData.mobtoken) {
-          //Send push notification using Firebase
-          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
-            registrationToken: userData.mobtoken,
-            title: selectedTemplate?.title || messageTitle,
-            message: message,
+        if (userData && userData.SendSMS == true) {
+          // Send SMS as a fallback
+          const response = await axios.post('http://localhost:8000/api/send-sms/', {
             UID: userId,
+            body: message,
           }, {
             headers: {
               'Authorization': 'Bearer ' + userToken
@@ -146,11 +144,13 @@ export default function SendMessagePage() {
           });
           console.log(response.data);
         }
-        else if (userData && userData.SendSMS == true) {
-          // Send SMS as a fallback
-          const response = await axios.post('http://localhost:8000/api/send-sms/', {
+        else if (userData && userData.mobtoken) {
+          //Send push notification using Firebase
+          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
+            registrationToken: userData.mobtoken,
+            title: selectedTemplate?.title || messageTitle,
+            message: message,
             UID: userId,
-            body: message,
           }, {
             headers: {
               'Authorization': 'Bearer ' + userToken
