@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { ref, onValue, get } from "firebase/database";
@@ -14,6 +14,11 @@ interface Template {
   inUse: boolean;
 }
 
+interface Group {
+  id: string;
+  members: string[];
+}
+
 export default function SendMessagePage() {
   const [message, setMessage] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -21,6 +26,7 @@ export default function SendMessagePage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [messageTitle, setMessageTitle] = useState('');
+  const [groups, setGroups] = useState<Group[]>([]);
 
   const [userToken, setUserToken] = useState('');
   const [redirect, setRedirect] = useState(false);
@@ -29,13 +35,13 @@ export default function SendMessagePage() {
     const auth = getAuth();
     if (auth.currentUser) {
       auth.currentUser.getIdToken(/* forceRefresh */ true).then(function (idToken) {
-        setUserToken(idToken)
-        console.log(userToken);
+        setUserToken(idToken);
       }).catch(function (error) {
         console.error('Błąd podczas pobierania tokenu:', error);
       });
     }
     fetchUserRole();
+    fetchGroups();
   }, []);
 
   useEffect(() => {
@@ -126,13 +132,11 @@ export default function SendMessagePage() {
           });
           console.log(response.data);
         }
-        if (userData && userData.mobtoken) {
-          //Send push notification using Firebase
-          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
-            registrationToken: userData.mobtoken,
-            title: selectedTemplate?.title || messageTitle,
-            message: message,
+        if (userData && userData.SendSMS == true) {
+          // Send SMS as a fallback
+          const response = await axios.post('http://localhost:8000/api/send-sms/', {
             UID: userId,
+            body: message,
           }, {
             headers: {
               'Authorization': 'Bearer ' + userToken
@@ -140,11 +144,13 @@ export default function SendMessagePage() {
           });
           console.log(response.data);
         }
-        else if (userData && userData.SendSMS == true) {
-          // Send SMS as a fallback
-          const response = await axios.post('http://localhost:8000/api/send-sms/', {
+        else if (userData && userData.mobtoken) {
+          //Send push notification using Firebase
+          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
+            registrationToken: userData.mobtoken,
+            title: selectedTemplate?.title || messageTitle,
+            message: message,
             UID: userId,
-            body: message,
           }, {
             headers: {
               'Authorization': 'Bearer ' + userToken
@@ -180,99 +186,163 @@ export default function SendMessagePage() {
       console.error('Error fetching user data:', error);
     }
   };
-  
 
+  const fetchGroups = async () => {
+    try {
+      const groupsRef = ref(db, 'groups');
+      const snapshot = await get(groupsRef);
+      const groupsData = snapshot.val();
+      if (groupsData) {
+        const groupsArray = Object.keys(groupsData).map(async (groupName) => {
+          const group = groupsData[groupName];
+          const groupUsersRef = ref(db, `groups/${groupName}/Users`);
+          const groupUsersSnapshot = await get(groupUsersRef);
+          const groupUsersData = groupUsersSnapshot.val();
+          const members = group.members && group.members.map((member: { id: string }) => member.id); // Dodaj warunek
+          return {
+            id: groupName,
+            members: members || [], // Domyślnie ustaw pustą tablicę, jeśli group.members jest undefined
+          };
+        });
+        const resolvedGroupsArray = await Promise.all(groupsArray);
+        setGroups(resolvedGroupsArray);
+      }
+    } catch (error) {
+      console.error('Błąd podczas pobierania grup:', error);
+    }
+  };
+
+  const selectGroup = async (group: Group) => {
+    try {
+      const groupRef = ref(db, `groups/${group.id}/Users`);
+      const groupSnapshot = await get(groupRef);
+      const groupData = groupSnapshot.val();
+  
+      if (groupData) {
+        const groupUserIds: string[] = Object.values(groupData); // Pobierz identyfikatory użytkowników z danych grupy
+        console.log('Identyfikatory użytkowników z grupy:', groupUserIds);
+        
+        // Ustaw identyfikatory użytkowników jako wybrane
+        setSelectedUsers(groupUserIds);
+      } else {
+        console.error('Dane grupy nie zostały pobrane poprawnie.');
+      }
+    } catch (error) {
+      console.error('Błąd podczas zaznaczania użytkowników z grupy:', error);
+    }
+  };
+  
+  
   if (redirect) {
     const link = document.createElement('a');
     link.href = "/(drawer)/home";
     link.click();
   }
 
-
   return (
-    <View style={styles.container}>
-      <Drawer.Screen
-        options={{
-          title: "Wyślij wiadomość",
-          headerShown: true,
-          headerLeft: () => <DrawerToggleButton />
-        }} />
-      <Text style={styles.subtitle}>Wyślij wiadomość</Text>
+    <ScrollView contentContainerStyle={styles.scrollView}>
+      <View style={styles.container}>
+        <Drawer.Screen
+          options={{
+            title: "Wyślij wiadomość",
+            headerShown: true,
+            headerLeft: () => <DrawerToggleButton />
+          }} />
+        <Text style={styles.subtitle}>Wyślij wiadomość</Text>
 
-      <View style={styles.upperPanelContainer}>
-        {/* Panel wyboru użytkownika */}
-        <View style={styles.upperPanel}>
-          <Text style={styles.sectionTitle}>Wybierz użytkowników:</Text>
-          {users.map((user) => (
+        <View style={styles.upperPanelContainer}>
+          {/* Panel wyboru użytkownika */}
+          <View style={styles.upperPanel}>
+            <Text style={styles.sectionTitle}>Wybierz użytkowników:</Text>
+            {users.map((user) => (
+              <TouchableOpacity
+                key={user.id}
+                style={[
+                  styles.userOption,
+                  selectedUsers.includes(user.id) && styles.selectedUserOption,
+                ]}
+                onPress={() => toggleUserSelection(user.id)}
+              >
+                <Text style={styles.userName}>{user.name}</Text>
+                <Text style={styles.userEmail}>{user.email}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* Panel wyboru grup */}
+          <View style={styles.upperPanel}>
+            <Text style={styles.sectionTitle}>Wybierz grupy:</Text>
+            {groups.map((group) => (
+              <TouchableOpacity
+                key={group.id}
+                style={[
+                  styles.groupOption,
+                ]}
+                onPress={() => selectGroup(group)} // Dodaj funkcję obsługującą kliknięcie
+              >
+                <Text>{group.id}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* Panel wyboru szablonu wiadomości */}
+          <View style={styles.upperPanel}>
+            <Text style={styles.sectionTitle}>Wybierz szablon wiadomości:</Text>
+            {templates.map((template) => (
+              <TouchableOpacity
+                key={template.id}
+                style={[
+                  styles.templateOption,
+                  selectedTemplate && selectedTemplate.id === template.id && styles.selectedTemplateOption,
+                ]}
+                onPress={() => selectTemplate(template)}
+              >
+                <Text>{template.title}</Text>
+              </TouchableOpacity>
+            ))}
             <TouchableOpacity
-              key={user.id}
-              style={[
-                styles.userOption,
-                selectedUsers.includes(user.id) && styles.selectedUserOption,
-              ]}
-              onPress={() => toggleUserSelection(user.id)}
-            >
-              <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.userEmail}>{user.email}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {/* Panel wyboru szablonu wiadomości */}
-        <View style={styles.upperPanel}>
-          <Text style={styles.sectionTitle}>Wybierz szablon wiadomości:</Text>
-          {templates.map((template) => (
-            <TouchableOpacity
-              key={template.id}
               style={[
                 styles.templateOption,
-                selectedTemplate && selectedTemplate.id === template.id && styles.selectedTemplateOption,
+                !selectedTemplate && styles.selectedTemplateOption,
               ]}
-              onPress={() => selectTemplate(template)}
+              onPress={() => selectTemplate(null)}
             >
-              <Text>{template.title}</Text>
+              <Text>Pusty</Text>
             </TouchableOpacity>
-          ))}
-          <TouchableOpacity
-            style={[
-              styles.templateOption,
-              !selectedTemplate && styles.selectedTemplateOption,
-            ]}
-            onPress={() => selectTemplate(null)}
-          >
-            <Text>Pusty</Text>
-          </TouchableOpacity>
+          </View>
+          {/* Panel wprowadzania tytułu wiadomości */}
+          <View style={styles.upperPanel}>
+            <TextInput
+              style={styles.input}
+              placeholder="Temat"
+              value={messageTitle}
+              onChangeText={setMessageTitle}
+              editable={selectedTemplate === null}
+            />
+          </View>
         </View>
-        {/* Panel wprowadzania tytułu wiadomości */}
-        <View style={styles.upperPanel}>
+
+        {/* Panel dolny (do wpisywania treści wiadomości) */}
+        <View style={styles.lowerPanel}>
           <TextInput
-            style={styles.input}
-            placeholder="Temat"
-            value={messageTitle}
-            onChangeText={setMessageTitle}
+            style={styles.messageInput}
+            placeholder="Treść wiadomości..."
+            multiline
+            value={message}
+            onChangeText={setMessage}
             editable={selectedTemplate === null}
           />
+          <TouchableOpacity style={styles.button} onPress={() => sendMessage(userToken)}>
+            <Text style={styles.buttonText}>Wyślij</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Panel dolny (do wpisywania treści wiadomości) */}
-      <View style={styles.lowerPanel}>
-        <TextInput
-          style={styles.messageInput}
-          placeholder="Treść wiadomości..."
-          multiline
-          value={message}
-          onChangeText={setMessage}
-          editable={selectedTemplate === null}
-        />
-        <TouchableOpacity style={styles.button} onPress={() => sendMessage(userToken)}>
-          <Text style={styles.buttonText}>Wyślij</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -336,6 +406,13 @@ const styles = StyleSheet.create({
   },
   selectedTemplateOption: {
     backgroundColor: '#007bff',
+  },
+  groupOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#dcdcdc',
+    borderRadius: 5,
+    marginBottom: 5,
   },
   lowerPanel: {
     width: '100%',
