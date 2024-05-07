@@ -198,7 +198,6 @@ export default function SendMessagePage() {
           const groupUsersRef = ref(db, `groups/${groupName}/Users`);
           const groupUsersSnapshot = await get(groupUsersRef);
           const groupUsersData = groupUsersSnapshot.val();
-          console.log(`Dane użytkowników dla grupy ${groupName}:`, groupUsersData); // Dodaj ten log
           const members = group.members && group.members.map((member: { id: string }) => member.id); // Dodaj warunek
           return {
             id: groupName,
@@ -212,12 +211,27 @@ export default function SendMessagePage() {
       console.error('Błąd podczas pobierania grup:', error);
     }
   };
+
+  const selectGroup = async (group: Group) => {
+    try {
+      const groupRef = ref(db, `groups/${group.id}/Users`);
+      const groupSnapshot = await get(groupRef);
+      const groupData = groupSnapshot.val();
   
-  
-  
-  const selectGroup = (group: Group) => {
-    group.members.forEach(memberId => toggleUserSelection(memberId));
+      if (groupData) {
+        const groupUserIds: string[] = Object.values(groupData); // Pobierz identyfikatory użytkowników z danych grupy
+        console.log('Identyfikatory użytkowników z grupy:', groupUserIds);
+        
+        // Ustaw identyfikatory użytkowników jako wybrane
+        setSelectedUsers(groupUserIds);
+      } else {
+        console.error('Dane grupy nie zostały pobrane poprawnie.');
+      }
+    } catch (error) {
+      console.error('Błąd podczas zaznaczania użytkowników z grupy:', error);
+    }
   };
+  
   
   if (redirect) {
     const link = document.createElement('a');
@@ -259,17 +273,14 @@ export default function SendMessagePage() {
             <Text style={styles.sectionTitle}>Wybierz grupy:</Text>
             {groups.map((group) => (
               <TouchableOpacity
-              key={group.id}
-              style={[
-                styles.groupOption,
-              ]}
-              onPress={async () => {
-                await fetchGroups(); // Wywołaj funkcję fetchGroups
-                group.members.forEach(memberId => toggleUserSelection(memberId));
-              }}
-            >
-              <Text>{group.id}</Text>
-            </TouchableOpacity>
+                key={group.id}
+                style={[
+                  styles.groupOption,
+                ]}
+                onPress={() => selectGroup(group)} // Dodaj funkcję obsługującą kliknięcie
+              >
+                <Text>{group.id}</Text>
+              </TouchableOpacity>
             ))}
           </View>
           {/* Panel wyboru szablonu wiadomości */}
