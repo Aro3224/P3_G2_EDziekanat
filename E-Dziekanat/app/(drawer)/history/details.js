@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, TextInput, Button, FlatList, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, TextInput, Pressable, FlatList, ScrollView, Platform} from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { db } from '../../../components/configs/firebase-config';
 import { ref, get, child, set, push, serverTimestamp, onValue, update } from "firebase/database";
 import { useRoute } from '@react-navigation/native';
 import { auth } from '../../../components/configs/firebase-config';
 import { PageTitle, StyledButton, ButtonText } from '../../../components/styles';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function NextPage() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -18,6 +20,7 @@ export default function NextPage() {
   const notificationId = route.params.id;
   const userId = route.params.uid;
   const currentUserUid = auth.currentUser.uid;
+  const navigation = useNavigation();
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -177,6 +180,10 @@ export default function NextPage() {
       </View>
     );
   };
+
+  const navigationBack = async () => {
+    return navigation.goBack();
+  };
   
 
   return (
@@ -186,6 +193,11 @@ export default function NextPage() {
         options={{
           title: notificationTitle,
           headerShown: true,
+          headerLeft: () => (
+            <Pressable onPress={() => navigationBack()}>
+              <MaterialIcons name="arrow-back" size={24} color="black" style={{margin: 16}}/>
+            </Pressable>
+          ),
         }}
       />
       <PageTitle style={{marginBottom: 10}}>{notificationTitle}</PageTitle>

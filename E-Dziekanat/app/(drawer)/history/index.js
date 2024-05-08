@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, FlatList, Button } from 'react-native';
+import { Text, View, StyleSheet, FlatList, Platform, ScrollView, Pressable } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { auth, db } from '../../../components/configs/firebase-config';
-import { getDatabase, ref, child, get } from "firebase/database";
-import { Link } from 'expo-router';
+import { ref, get } from "firebase/database";
+import { PageTitle, StyledButton, ButtonText } from '../../../components/styles';
+import { useNavigation } from '@react-navigation/native';
 
 const fetchNotifications = async (isAdmin) => {
   try {
@@ -62,6 +63,8 @@ export default function HistoryPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [sortDescending, setSortDescending] = useState(true);
+  const navigation = useNavigation();
+  
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -113,28 +116,30 @@ export default function HistoryPage() {
     const notificationDate = new Date(item.czas).toLocaleString();
     const isUnread = item.odczytano === false;
     const isNewResponse = isAdmin && item.nowaOdpowiedz === true;
+    
+    const navigateToDetails = () => {
+      const params = { uid: item.userId, id: item.id }; // Update params with uid and id
+      navigation.navigate('details', params);
+    };
 
     return (
-      <View style={[styles.notificationItem, isUnread && styles.unreadNotification, isNewResponse && styles.newResponseNotification]}>
-        {isAdmin && item.userData && item.userData.email ? (
-          <Text>{item.userData.email}</Text>
-        ) : null}
-        <Text style={styles.notificationTitle}>{item.tytul}</Text>
-        <Text style={styles.notificationText}>{item.tresc}</Text>
-        <Text style={styles.notificationDate}>Data: {notificationDate}</Text>
-        <View style={styles.buttonContainer}>
-          <Link
-            href={`/(drawer)/history/details?uid=${item.userId}&id=${item.id}`}
-          >
-            <Text style={styles.openButton}>Otwórz</Text>
-          </Link>
-          {isNewResponse && <Text style={styles.newResponseText}>Nowa odpowiedź</Text>}
+      <Pressable onPress={navigateToDetails}>
+        <View style={[styles.notificationItem, isUnread && styles.unreadNotification, isNewResponse && styles.newResponseNotification]}>
+          <View style={styles.notificationContent}>
+            <Text style={styles.notificationTitle}>{item.tytul}</Text>
+            {isAdmin && item.userData && item.userData.email ? (
+              <Text>{item.userData.email}</Text>
+            ) : null}
+          </View>
+          <Text style={styles.notificationDate}>Otrzymano: {notificationDate}</Text>
         </View>
-      </View>
+      </Pressable>
     );
+    
   };
 
   return (
+    <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={styles.container}>
       <Drawer.Screen 
         options={{ 
@@ -142,17 +147,17 @@ export default function HistoryPage() {
           headerShown: true, 
           headerLeft: ()=> <DrawerToggleButton/>}} />
       
-      <Text style={styles.title}>Lista powiadomień:</Text>
-      <View style={styles.filters}>
-        <Button
-          title={sortDescending ? 'Od najstarszych' : 'Od najnowszych'}
-          onPress={toggleSortOrder}
-        />
-        <Button
-          title="Odśwież"
-          onPress={refreshNotifications}
-        />
+      <PageTitle>Lista powiadomień:</PageTitle>
+      <View style={Platform.OS === "web" ? styles.buttonContainer : styles.buttonContainerOS}>
+        <StyledButton onPress={toggleSortOrder}>
+          <ButtonText>{sortDescending ? 'Od najstarszych' : 'Od najnowszych'}</ButtonText>
+        </StyledButton>
+        <StyledButton onPress={refreshNotifications}>
+          <ButtonText>Odśwież</ButtonText>
+        </StyledButton>
       </View>
+      <View style={styles.upperPanel}>
+      <Text style={styles.sectionTitle}>Powiadomienia:</Text>
       <FlatList
         data={notifications.sort((a, b) => {
           if (sortBy === 'newest') {
@@ -164,30 +169,63 @@ export default function HistoryPage() {
         renderItem={renderNotificationItem}
         keyExtractor={(item, index) => index.toString()}
       />
+      </View>
     </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollViewContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
   },
+  upperPanel: {
+    width: '90%',
+    backgroundColor: '#f0f0f0',
+    marginBottom: 10,
+    borderRadius: 10,
+    paddingVertical: 10,
+    marginTop: 30,
+  },
   notificationTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  notificationDate: {
+    fontSize: 14,
+    color: '#666',
   },
   notificationItem: {
-    backgroundColor: "#eee",
-    padding: 10,
-    marginBottom: 10,
+    width: '100%',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#dcdcdc',
     borderRadius: 5,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    marginLeft: 5,
+  },
+  notificationContent: {
+    flex: 1,
   },
   notificationText: {
     fontSize: 14,
@@ -207,6 +245,14 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    width: '93%',
+    paddingHorizontal: 20,
+    marginTop: 15,
+    justifyContent: 'flex-end'
+  },
+  buttonContainerOS: {
+    paddingHorizontal: 20,
+    marginTop: 15,
+    flexDirection: 'row',
   },
 });
