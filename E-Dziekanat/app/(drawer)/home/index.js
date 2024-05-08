@@ -191,9 +191,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 10,
   },
-  selectedGroupItem: {
-    backgroundColor: '#6D28D9',
-  },
   notificationTitle: {
     fontSize: 14,
     fontWeight: 'bold',

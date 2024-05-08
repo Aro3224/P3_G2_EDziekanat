@@ -5,7 +5,7 @@ import { db } from '../../../components/configs/firebase-config';
 import { ref, get, child, set, push, serverTimestamp, onValue } from "firebase/database";
 import { useRoute } from '@react-navigation/native';
 import { auth } from '../../../components/configs/firebase-config';
-import { PageTitle, SubTitle, StyledButton, ButtonText } from '../../../components/styles';
+import { PageTitle, StyledButton, ButtonText } from '../../../components/styles';
 
 export default function NextPage() {
   const [notificationContent, setNotificationContent] = useState('');
@@ -122,6 +122,7 @@ export default function NextPage() {
         }}
       />
       <PageTitle style={{marginBottom: 10}}>{notificationTitle}</PageTitle>
+      <View style={styles.messageContainer}>
       <Text style={styles.content}>{notificationContent}</Text>
       <FlatList
         data={responses}
@@ -130,6 +131,7 @@ export default function NextPage() {
         
       />
       <Text style={{marginBottom: 30}}>Otrzymano: {notificationDate}</Text>
+      </View>
       <TextInput
         style={styles.input}
         onChangeText={setResponse}
@@ -172,5 +174,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
+  },
+  messageContainer: {
+    backgroundColor: '#e8e8e8',
+    marginBottom: 10,
+    borderRadius: 10,
+    paddingVertical: 10,
+    padding: 30,
+    flex: 1,
   },
 });

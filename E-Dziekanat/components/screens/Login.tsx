@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { StyledContainer, InnerContainer, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, RightIcon, StyledButton, ButtonText, Colors, MsgBox, StyledLoginTextInput } from '../styles';
+import { InnerContainer, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, RightIcon, StyledButton, ButtonText, Colors, MsgBox, StyledLoginTextInput } from '../styles';
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import { Formik } from 'formik';
 import { Octicons, Ionicons } from '@expo/vector-icons';
 import { auth } from '../configs/firebase-config';
@@ -31,7 +31,8 @@ const Login: React.FC<{ onLoginSuccess: () => void }> = (props) => {
     };
 
     return (
-        <StyledContainer>
+        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+        <View style={styles.container}>
             <StatusBar style="dark"/>
             <InnerContainer>
                 <PageTitle>E-Dziekanat</PageTitle>
@@ -67,7 +68,7 @@ const Login: React.FC<{ onLoginSuccess: () => void }> = (props) => {
                                 hidePassword={hidePassword}
                                 setHidePassword={setHidePassword}
                             />
-                            <MsgBox>{message}</MsgBox>
+                            <MsgBox style={styles.errorMessage}>{message}</MsgBox>
                             <StyledButton onPress={() => handleSubmit()}>
                                 <ButtonText>Login</ButtonText>
                             </StyledButton>
@@ -76,7 +77,8 @@ const Login: React.FC<{ onLoginSuccess: () => void }> = (props) => {
                     )}
                 </Formik>
             </InnerContainer>
-        </StyledContainer>
+        </View>
+        </ScrollView>
     );
 }
 
@@ -98,7 +100,7 @@ const MyTextInput: React.FC<MyTextInputProps & React.ComponentProps<typeof Style
 }) => {
     return (
         /*<View>*/
-        <View style={{ marginBottom: 80}}>
+        <View>
             <LeftIcon>
                 {icon === 'mail' && <Octicons name="mail" size={30} color={brand} />}
                 {icon === 'lock' && <Octicons name="lock" size={30} color={brand} />}
@@ -113,5 +115,21 @@ const MyTextInput: React.FC<MyTextInputProps & React.ComponentProps<typeof Style
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: "#fff",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    scrollViewContainer: {
+      flexGrow: 1,
+    },
+    errorMessage: {
+        color: 'red',
+        fontSize: 18,
+    },
+});
 
 export default Login;
