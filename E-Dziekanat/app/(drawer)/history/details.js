@@ -188,7 +188,7 @@ export default function NextPage() {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-    <View style={styles.container}>
+    <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
     <Drawer.Screen
         options={{
           title: notificationTitle,
@@ -232,6 +232,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 20,
+    paddingHorizontal: 200
+  },
+  containerOS: {
     flex: 1,
     backgroundColor: "#fff",
     padding: 20,

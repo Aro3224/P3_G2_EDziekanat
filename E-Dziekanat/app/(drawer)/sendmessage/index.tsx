@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, Platform, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { ref, onValue, get } from "firebase/database";
 import { getAuth } from "firebase/auth";
 import { db, auth } from '../../../components/configs/firebase-config';
 import axios from 'axios';
+import { StyledButton, ButtonText, MsgBox, PageTitle, StyledInputLabel, StyledTextInput } from '../../../components/styles';
 
 interface Template {
   id: string;
@@ -27,9 +28,10 @@ export default function SendMessagePage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [messageTitle, setMessageTitle] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);
-
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [userToken, setUserToken] = useState('');
   const [redirect, setRedirect] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const auth = getAuth();
@@ -41,7 +43,6 @@ export default function SendMessagePage() {
       });
     }
     fetchUserRole();
-    fetchGroups();
   }, []);
 
   useEffect(() => {
@@ -52,10 +53,31 @@ export default function SendMessagePage() {
       if (usersData) {
         const usersArray = Object.keys(usersData).map((key) => ({
           id: key,
-          name: usersData[key].name,
+          name: usersData[key].Imie,
+          surname: usersData[key].Nazwisko,
           email: usersData[key].email,
         }));
         setUsers(usersArray);
+      }
+    });
+
+    const groupsRef = ref(db, '/groups');
+    onValue(groupsRef, async (snapshot) => {
+      const groupsData = snapshot.val();
+      if (groupsData) {
+        const groupsArray = Object.keys(groupsData).map(async (groupName) => {
+          const group = groupsData[groupName];
+          const groupUsersRef = ref(db, `groups/${groupName}/Users`);
+          const groupUsersSnapshot = await get(groupUsersRef);
+          const groupUsersData = groupUsersSnapshot.val();
+          const members = group.members && group.members.map((member: { id: string }) => member.id); // Dodaj warunek
+          return {
+            id: groupName,
+            members: members || [], // Domyślnie ustaw pustą tablicę, jeśli group.members jest undefined
+          };
+        });
+        const resolvedGroupsArray = await Promise.all(groupsArray);
+        setGroups(resolvedGroupsArray);
       }
     });
 
@@ -89,6 +111,9 @@ export default function SendMessagePage() {
     setSelectedUsers(updatedSelectedUsers);
   };
 
+  if(selectedUsers == null){
+    setSelectedGroup == null;
+  }
   const selectTemplate = (template: Template | null) => {
     setSelectedTemplate(template);
     if (template) {
@@ -107,6 +132,10 @@ export default function SendMessagePage() {
     console.log('To:', selectedUsers);
     console.log('Template:', selectedTemplate);
     console.log('Title:', messageTitle);
+
+    if(selectedUsers.length === 0){
+      setErrorMessage("Wybierz komu chcesz wysłać wiadomość.")
+    }
 
     if (!selectedTemplate) {
       setMessage('');
@@ -131,6 +160,7 @@ export default function SendMessagePage() {
             }
           });
           console.log(response.data);
+          setErrorMessage("")
         }
         if (userData && userData.SendSMS == true) {
           // Send SMS as a fallback
@@ -143,6 +173,7 @@ export default function SendMessagePage() {
             }
           });
           console.log(response.data);
+          setErrorMessage("")
         }
         else if (userData && userData.mobtoken) {
           //Send push notification using Firebase
@@ -157,11 +188,13 @@ export default function SendMessagePage() {
             }
           });
           console.log(response.data);
+          setErrorMessage("")
         }
       }
     } catch (error) {
       console.error('Błąd podczas wysyłania wiadomości:', error);
       alert("Błąd podczas wysyłania wiadomości");
+      setErrorMessage("Błąd podczas wysyłania wiadomości")
     }
   };
 
@@ -187,50 +220,31 @@ export default function SendMessagePage() {
     }
   };
 
-  const fetchGroups = async () => {
-    try {
-      const groupsRef = ref(db, 'groups');
-      const snapshot = await get(groupsRef);
-      const groupsData = snapshot.val();
-      if (groupsData) {
-        const groupsArray = Object.keys(groupsData).map(async (groupName) => {
-          const group = groupsData[groupName];
-          const groupUsersRef = ref(db, `groups/${groupName}/Users`);
-          const groupUsersSnapshot = await get(groupUsersRef);
-          const groupUsersData = groupUsersSnapshot.val();
-          const members = group.members && group.members.map((member: { id: string }) => member.id); // Dodaj warunek
-          return {
-            id: groupName,
-            members: members || [], // Domyślnie ustaw pustą tablicę, jeśli group.members jest undefined
-          };
-        });
-        const resolvedGroupsArray = await Promise.all(groupsArray);
-        setGroups(resolvedGroupsArray);
-      }
-    } catch (error) {
-      console.error('Błąd podczas pobierania grup:', error);
-    }
-  };
-
   const selectGroup = async (group: Group) => {
     try {
-      const groupRef = ref(db, `groups/${group.id}/Users`);
-      const groupSnapshot = await get(groupRef);
-      const groupData = groupSnapshot.val();
-  
-      if (groupData) {
-        const groupUserIds: string[] = Object.values(groupData); // Pobierz identyfikatory użytkowników z danych grupy
-        console.log('Identyfikatory użytkowników z grupy:', groupUserIds);
-        
-        // Ustaw identyfikatory użytkowników jako wybrane
-        setSelectedUsers(groupUserIds);
+      if (selectedGroup === group.id) {
+        setSelectedGroup(null);
+        setSelectedUsers([]);
       } else {
-        console.error('Dane grupy nie zostały pobrane poprawnie.');
+        const groupRef = ref(db, `groups/${group.id}/Users`);
+        const groupSnapshot = await get(groupRef);
+        const groupData = groupSnapshot.val();
+    
+        if (groupData) {
+          const groupUserIds: string[] = Object.values(groupData);
+          console.log('Identyfikatory użytkowników z grupy:', groupUserIds);
+          
+          setSelectedUsers(groupUserIds);
+          setSelectedGroup(group.id);
+        } else {
+          console.error('Dane grupy nie zostały pobrane poprawnie.');
+        }
       }
     } catch (error) {
       console.error('Błąd podczas zaznaczania użytkowników z grupy:', error);
     }
   };
+  
   
   
   if (redirect) {
@@ -248,9 +262,9 @@ export default function SendMessagePage() {
             headerShown: true,
             headerLeft: () => <DrawerToggleButton />
           }} />
-        <Text style={styles.subtitle}>Wyślij wiadomość</Text>
+        <PageTitle>Wyślij wiadomość</PageTitle>
 
-        <View style={styles.upperPanelContainer}>
+        <View style={Platform.OS === "web" ? styles.panelContainer : styles.panelContainerOS}>
           {/* Panel wyboru użytkownika */}
           <View style={styles.upperPanel}>
             <Text style={styles.sectionTitle}>Wybierz użytkowników:</Text>
@@ -259,27 +273,34 @@ export default function SendMessagePage() {
                 key={user.id}
                 style={[
                   styles.userOption,
-                  selectedUsers.includes(user.id) && styles.selectedUserOption,
+                  selectedUsers.includes(user.id) && styles.selectedOption,
                 ]}
                 onPress={() => toggleUserSelection(user.id)}
               >
-                <Text style={styles.userName}>{user.name}</Text>
-                <Text style={styles.userEmail}>{user.email}</Text>
+                {Platform.OS !== 'web' ? (
+                <Text style={[styles.userName, selectedUsers.includes(user.id) && styles.selectedText]}>{user.name} {user.surname}</Text>
+              ) : (
+                <>
+                  <Text style={[styles.userName, selectedUsers.includes(user.id) && styles.selectedText]}>{user.name} {user.surname}</Text>
+                  <Text style={[styles.userEmail, selectedUsers.includes(user.id) && styles.selectedText]}>{user.email}</Text>
+                </>
+              )}
               </TouchableOpacity>
             ))}
           </View>
           {/* Panel wyboru grup */}
           <View style={styles.upperPanel}>
-            <Text style={styles.sectionTitle}>Wybierz grupy:</Text>
+            <Text style={styles.sectionTitle}>Wybierz grupę:</Text>
             {groups.map((group) => (
               <TouchableOpacity
                 key={group.id}
                 style={[
                   styles.groupOption,
+                  selectedGroup === group.id && styles.selectedOption
                 ]}
-                onPress={() => selectGroup(group)} // Dodaj funkcję obsługującą kliknięcie
+                onPress={() => selectGroup(group)}
               >
-                <Text>{group.id}</Text>
+                <Text style={[styles.groupID, selectedGroup === group.id && styles.selectedText]}>{group.id}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -291,49 +312,54 @@ export default function SendMessagePage() {
                 key={template.id}
                 style={[
                   styles.templateOption,
-                  selectedTemplate && selectedTemplate.id === template.id && styles.selectedTemplateOption,
+                  selectedTemplate && selectedTemplate.id === template.id && styles.selectedOption,
                 ]}
                 onPress={() => selectTemplate(template)}
               >
-                <Text>{template.title}</Text>
+                <Text style={[styles.groupID, selectedTemplate && selectedTemplate.id === template.id && styles.selectedText]}>{template.title}</Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity
               style={[
                 styles.templateOption,
-                !selectedTemplate && styles.selectedTemplateOption,
+                !selectedTemplate && styles.selectedOption,
               ]}
               onPress={() => selectTemplate(null)}
             >
-              <Text>Pusty</Text>
+              <Text style={[styles.groupID, !selectedTemplate && styles.selectedText]}>Pusty</Text>
             </TouchableOpacity>
           </View>
-          {/* Panel wprowadzania tytułu wiadomości */}
-          <View style={styles.upperPanel}>
-            <TextInput
-              style={styles.input}
-              placeholder="Temat"
-              value={messageTitle}
-              onChangeText={setMessageTitle}
-              editable={selectedTemplate === null}
-            />
-          </View>
+          
         </View>
 
         {/* Panel dolny (do wpisywania treści wiadomości) */}
+        <View style={Platform.OS === "web" ? styles.panelContainer : styles.panelContainerOS}>
         <View style={styles.lowerPanel}>
-          <TextInput
-            style={styles.messageInput}
-            placeholder="Treść wiadomości..."
-            multiline
-            value={message}
-            onChangeText={setMessage}
+          {/* Panel wprowadzania tytułu wiadomości */}
+          <StyledInputLabel style={{marginVertical: 10}}>Temat</StyledInputLabel>
+          <StyledTextInput
+            style={styles.input}
+            placeholder="Temat"
+            value={messageTitle}
+            onChangeText={setMessageTitle}
             editable={selectedTemplate === null}
           />
-          <TouchableOpacity style={styles.button} onPress={() => sendMessage(userToken)}>
-            <Text style={styles.buttonText}>Wyślij</Text>
-          </TouchableOpacity>
+        <StyledInputLabel style={{marginBottom: 10}}>Treść</StyledInputLabel>
+        <StyledTextInput
+          style={styles.messageInput}
+          placeholder="Treść wiadomości..."
+          multiline
+          value={message}
+          onChangeText={setMessage}
+          editable={selectedTemplate === null}
+        />
+          </View>
+          <StyledButton style={{width: '100%'}} onPress={() => sendMessage(userToken)}>
+            <ButtonText>Wyślij</ButtonText>
+          </StyledButton>
+          <MsgBox style={styles.errorMessage}>{errorMessage}</MsgBox>
         </View>
+      
       </View>
     </ScrollView>
   );
@@ -349,12 +375,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  subtitle: {
-    fontSize: 36,
-    marginBottom: 10,
-    fontWeight: 'bold',
+  panelContainer: {
+    width: '90%',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'column',
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
-  upperPanelContainer: {
+  panelContainerOS: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -368,6 +397,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 10,
     paddingVertical: 10,
+    marginTop: 30,
   },
   userOption: {
     width: '100%',
@@ -380,15 +410,25 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 5,
   },
-  selectedUserOption: {
-    backgroundColor: '#007bff',
+  selectedOption: {
+    backgroundColor: '#6D28D9',
+  },
+  selectedText: {
+    color: '#fff',
   },
   userName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#000',
   },
   userEmail: {
+    fontSize: 14,
+    color: '#666',
+  },
+  groupID: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  groupMembers: {
     fontSize: 14,
     color: '#666',
   },
@@ -396,6 +436,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
+    marginLeft: 5,
   },
   templateOption: {
     paddingVertical: 10,
@@ -403,9 +444,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#dcdcdc',
     borderRadius: 5,
     marginBottom: 5,
-  },
-  selectedTemplateOption: {
-    backgroundColor: '#007bff',
   },
   groupOption: {
     paddingVertical: 10,
@@ -417,39 +455,23 @@ const styles = StyleSheet.create({
   lowerPanel: {
     width: '100%',
     backgroundColor: '#f0f0f0',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     borderTopWidth: 1,
     borderTopColor: '#ccc',
-  },
-  input: {
-    width: '90%',
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    paddingHorizontal: 10,
+    borderRadius: 10,
     marginBottom: 10,
   },
-  messageInput: {
-    width: '100%',
-    height: 120,
+  input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    paddingHorizontal: 10,
-    marginBottom: 20,
   },
-  button: {
-    backgroundColor: "#007bff",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginVertical: 10,
-    alignItems: 'center',
+  messageInput: {
+    height: 120,
+    borderColor: '#ccc',
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+  errorMessage: {
+    color: 'red',
+    fontSize: 18,
   },
 });
 

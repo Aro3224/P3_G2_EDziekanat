@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, TextInput, ScrollView, FlatList } from 'react-native';
+import { Text, View, StyleSheet, TextInput, ScrollView, FlatList, Platform } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { db } from '../../../components/configs/firebase-config';
 import { ref, get, child, set, push, serverTimestamp, onValue } from "firebase/database";
@@ -114,7 +114,7 @@ export default function NextPage() {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-    <View style={styles.container}>
+    <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
        <Drawer.Screen
         options={{
           title: notificationTitle,
@@ -155,7 +155,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    padding: 30,
+    padding: 20,
+    paddingHorizontal: 200
+  },
+  containerOS: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 20,
   },
   content: {
     fontSize: 16,
