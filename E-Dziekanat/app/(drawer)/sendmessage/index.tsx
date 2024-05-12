@@ -141,6 +141,14 @@ export default function SendMessagePage() {
       setMessage('');
       setMessageTitle('');
     }
+
+    if (!messageTitle.trim() || !message.trim()) {
+      console.log("Tytuł lub treść wiadomości jest pusta.");
+      alert("Tytuł i treść wiadomości nie mogą być puste.");
+      return;
+    }
+    
+
     setSelectedUsers([]);
     try {
       for (const userId of selectedUsers) {
@@ -195,7 +203,7 @@ export default function SendMessagePage() {
     } catch (error) {
       console.error('Błąd podczas wysyłania wiadomości:', error);
       alert("Błąd podczas wysyłania wiadomości");
-      setErrorMessage("Błąd podczas wysyłania wiadomości")
+      setErrorMessage("Błąd podczas wysyłania wiadomości");
     }
   };
 
