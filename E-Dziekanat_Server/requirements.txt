@@ -4,3 +4,4 @@ djangorestframework
 django-cors-headers
 firebase_admin
 vonage
+pyfcm

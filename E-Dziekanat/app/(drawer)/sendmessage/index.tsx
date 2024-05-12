@@ -147,21 +147,6 @@ export default function SendMessagePage() {
         const userRef = ref(db, `users/${userId}`);
         const userSnapshot = await get(userRef);
         const userData = userSnapshot.val();
-        if (userData && userData.webtoken) {
-          //Send push notification using Firebase
-          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
-            registrationToken: userData.webtoken,
-            title: selectedTemplate?.title || messageTitle,
-            message: message,
-            UID: userId,
-          }, {
-            headers: {
-              'Authorization': 'Bearer ' + userToken
-            }
-          });
-          console.log(response.data);
-          setErrorMessage("")
-        }
         if (userData && userData.SendSMS == true) {
           // Send SMS as a fallback
           const response = await axios.post('http://localhost:8000/api/send-sms/', {
@@ -190,7 +175,23 @@ export default function SendMessagePage() {
           console.log(response.data);
           setErrorMessage("")
         }
+        if (userData && userData.webtoken) {
+          //Send push notification using Firebase
+          const response = await axios.post('http://localhost:8000/api/send-web-notification/', {
+            registrationToken: userData.webtoken,
+            title: selectedTemplate?.title || messageTitle,
+            message: message,
+            UID: userId,
+          }, {
+            headers: {
+              'Authorization': 'Bearer ' + userToken
+            }
+          });
+          console.log(response.data);
+          setErrorMessage("")
+        }
       }
+      alert("Wiadomość została wysłana");
     } catch (error) {
       console.error('Błąd podczas wysyłania wiadomości:', error);
       alert("Błąd podczas wysyłania wiadomości");

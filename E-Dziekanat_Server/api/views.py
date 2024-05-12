@@ -9,6 +9,7 @@ import time
 import json
 import requests
 import vonage
+from pyfcm import FCMNotification
 
 
 @csrf_exempt
@@ -237,6 +238,30 @@ def send_push_notification(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
+@csrf_exempt
+def send_web_notification(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        title = data.get('title')
+        message_body = data.get('message')
+        registration_token = data.get('registrationToken')
+
+        if registration_token:
+            try:
+                # Wysyłanie powiadomienia
+                push_service = FCMNotification(api_key="AAAAFrz_bZ0:APA91bH6oyJxF6tAzuTY3LIG193k4bITsnLsEZEFB0funtYs3oCfPF0JfRZlsNwN5mzy9b6QitIqaP757lcrrG3r56wWjrPRq1_F6SrzIqkr9uh1TEfkDm60PBbmBlA4rHHpuz7JEOUb")
+                result = push_service.notify_single_device(registration_id=registration_token, message_title=title, message_body=message_body)
+
+                if result['success'] == 1:
+                    return JsonResponse({'message': 'Push notification sent successfully', 'FCMToken': registration_token}, status=200)
+                else:
+                    return JsonResponse({'error': 'Failed to send push notification'}, status=500)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
+        else:
+            return JsonResponse({'error': 'Registration token not provided'}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @csrf_exempt
 def delete_data(request):

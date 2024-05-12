@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/send-sms/', views.send_sms, name='send_sms'),
     path('api/send-push-notification/', views.send_push_notification, name='send_push_notification'),
     path('api/delete-data/', views.delete_data, name='delete_data'),
+    path('api/send-web-notification/', views.send_web_notification, name='send_web_notification'),
 ]
