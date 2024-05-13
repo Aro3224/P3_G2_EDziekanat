@@ -70,10 +70,10 @@ export default function SendMessagePage() {
           const groupUsersRef = ref(db, `groups/${groupName}/Users`);
           const groupUsersSnapshot = await get(groupUsersRef);
           const groupUsersData = groupUsersSnapshot.val();
-          const members = group.members && group.members.map((member: { id: string }) => member.id); // Dodaj warunek
+          const members = group.members && group.members.map((member: { id: string }) => member.id);
           return {
             id: groupName,
-            members: members || [], // Domyślnie ustaw pustą tablicę, jeśli group.members jest undefined
+            members: members || [],
           };
         });
         const resolvedGroupsArray = await Promise.all(groupsArray);
@@ -81,7 +81,6 @@ export default function SendMessagePage() {
       }
     });
 
-    // Load templates from Firebase
     const templatesRef = ref(db, 'templates');
     onValue(templatesRef, (snapshot) => {
       const templatesData = snapshot.val();

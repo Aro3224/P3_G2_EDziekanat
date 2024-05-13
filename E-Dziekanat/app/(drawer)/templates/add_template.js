@@ -36,10 +36,10 @@ export default function AddTemplatePage() {
 
 
       
-    const templateRef = ref(db, '/templates'); // Referencja do ścieżki '/templates' w bazie danych
-    const newTemplateRef = push(templateRef); // Nowy unikalny klucz dla szablonu
+    const templateRef = ref(db, '/templates');
+    const newTemplateRef = push(templateRef);
   
-    set(newTemplateRef, { // Ustawia dane szablonu pod nowym unikalnym kluczem
+    set(newTemplateRef, {
       title: templateTitle,
       content: templateContent,
       inUse: false,

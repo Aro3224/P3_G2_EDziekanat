@@ -38,16 +38,13 @@ export default function HomePage() {
 
     fetchUserData();
 
-    // Dodaj nasłuchiwanie zmiany stanu autoryzacji użytkownika
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // Uzyskaj nowy token
         if (Platform.OS === 'web') {
           await handleWebToken(user);
         } else {
           await handleMobileToken(user);
 
-          // Rejestruj handler wiadomości push
           const unsubscribe = messaging().onMessage(async remoteMessage => {
             Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
           });
@@ -58,7 +55,6 @@ export default function HomePage() {
     });
 
     return () => {
-      // Odsubskrybuj nasłuchiwanie zmiany stanu autoryzacji użytkownika przy odmontowywaniu komponentu
       unsubscribe();
     };
   }, []);
@@ -75,7 +71,7 @@ export default function HomePage() {
             if (unreadNotificationsData) {
               const unreadNotificationsArray = [];
               Object.keys(unreadNotificationsData).forEach(notificationId => {
-                const czasOtrzymania = new Date(unreadNotificationsData[notificationId].czas).toLocaleString(); // Formatuj czas na datę i godzinę
+                const czasOtrzymania = new Date(unreadNotificationsData[notificationId].czas).toLocaleString();
                 const notification = {
                   id: notificationId,
                   ...unreadNotificationsData[notificationId],
@@ -113,8 +109,8 @@ export default function HomePage() {
     const messaging = getMessaging();
     const currentToken = await getToken(messaging, { vapidKey: "BLuGoqDsX7yuknK9LLcX5UONfv3pPC3cVhw-6CfEYCqeksICoLZMfs3tNGVGck0i7k6EVkrIFtKUOmn77afoaYk" });
     if (currentToken) {
-      const db = getDatabase(); // Pobierz referencję do bazy danych
-      await set(ref(db, `users/${user.uid}/webtoken`), currentToken); // Ustaw token web pod odpowiednim kluczem
+      const db = getDatabase();
+      await set(ref(db, `users/${user.uid}/webtoken`), currentToken);
     }
   };
 
@@ -127,7 +123,7 @@ export default function HomePage() {
     if (enabled) {
       console.log('Authorization status:', authStatus);
     }
-    return enabled; // Return permission status
+    return enabled;
   };
 
   return (

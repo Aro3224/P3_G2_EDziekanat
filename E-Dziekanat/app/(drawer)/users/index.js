@@ -22,7 +22,7 @@ export default function UsersPage() {
     if (auth.currentUser) {
       auth.currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
         setUserToken(idToken)
-        console.log(idToken); // Zamiast userToken
+        console.log(idToken);
       }).catch(function(error) {
         console.error('Błąd podczas pobierania tokenu:', error);
       });

@@ -118,7 +118,7 @@ export default function HistoryPage() {
     const isNewResponse = isAdmin && item.nowaOdpowiedz === true;
     
     const navigateToDetails = () => {
-      const params = { uid: item.userId, id: item.id }; // Update params with uid and id
+      const params = { uid: item.userId, id: item.id };
       navigation.navigate('details', params);
     };
 

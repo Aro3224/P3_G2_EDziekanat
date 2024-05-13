@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { InnerContainer, PageTitle, SubTitle, StyledFormArea, LeftIcon, StyledInputLabel, RightIcon, StyledButton, ButtonText, Colors, MsgBox, StyledLoginTextInput } from '../styles';
 import { StatusBar } from "expo-status-bar";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Platform } from "react-native";
 import { Formik } from 'formik';
 import { Octicons, Ionicons } from '@expo/vector-icons';
 import { auth } from '../configs/firebase-config';
@@ -32,7 +32,7 @@ const Login: React.FC<{ onLoginSuccess: () => void }> = (props) => {
 
     return (
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        <View style={styles.container}>
+        <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
             <StatusBar style="dark"/>
             <InnerContainer>
                 <PageTitle>E-Dziekanat</PageTitle>
@@ -122,6 +122,13 @@ const styles = StyleSheet.create({
       backgroundColor: "#fff",
       alignItems: "center",
       justifyContent: "center",
+      paddingHorizontal: 200
+    },
+    containerOS: {
+        flex: 1,
+        backgroundColor: "#fff",
+        alignItems: "center",
+        justifyContent: "center",
     },
     scrollViewContainer: {
       flexGrow: 1,
