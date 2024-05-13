@@ -183,7 +183,22 @@ export default function SendMessagePage() {
           console.log(response.data);
           setErrorMessage("")
         }
-        if (userData && userData.webtoken) {
+        if (userData && !userData.mobtoken && userData.webtoken) {
+          //Send push notification using Firebase
+          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
+            registrationToken: userData.mobtoken,
+            title: selectedTemplate?.title || messageTitle,
+            message: message,
+            UID: userId,
+          }, {
+            headers: {
+              'Authorization': 'Bearer ' + userToken
+            }
+          });
+          console.log(response.data);
+          setErrorMessage("")
+        }
+        else if (userData && userData.webtoken) {
           //Send push notification using Firebase
           const response = await axios.post('http://localhost:8000/api/send-web-notification/', {
             registrationToken: userData.webtoken,
