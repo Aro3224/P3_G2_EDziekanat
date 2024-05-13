@@ -23,7 +23,7 @@ interface Group {
 export default function SendMessagePage() {
   const [message, setMessage] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; surname: string; email: string }[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [messageTitle, setMessageTitle] = useState('');
