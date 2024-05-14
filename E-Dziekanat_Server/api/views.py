@@ -163,36 +163,30 @@ def send_sms(request):
         data = json.loads(request.body)
         uid = data.get('UID')
         content = data.get('body')
+        nr_telefonu = data.get('phoneNumber')
         if uid:
             try:
-                database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
-                # Pobieranie numeru telefonu z bazy danych
-                response = requests.get(f"{database_url}/users/{uid}/NrTelefonu.json")
-                if response.status_code == 200:
-                    nr_telefonu = response.json()
-                    if nr_telefonu:
-                        # Vonage Account SID i Auth Token
-                        client = vonage.Client(key="c5af630b", secret="VrAQHW3cFeD32Pmy")
-                        sms = vonage.Sms(client)
+                if nr_telefonu:
+                    # Vonage Account SID i Auth Token
+                    client = vonage.Client(key="c5af630b", secret="VrAQHW3cFeD32Pmy")
+                    sms = vonage.Sms(client)
 
-                        responseData = sms.send_message(
-                            {
-                                "from": "E-dziekanat",
-                                "to": '48' + nr_telefonu,
-                                "text": content,
-                            }
-                        )
+                    responseData = sms.send_message(
+                        {
+                            "from": "E-dziekanat",
+                            "to": '48' + nr_telefonu,
+                            "text": content,
+                        }
+                    )
 
-                        if responseData["messages"][0]["status"] == "0":
-                            print("Message sent successfully.")
-                        else:
-                            print(f"Message failed with error: {responseData['messages'][0]['error-text']}")
-
-                        return JsonResponse({'message': 'SMS sent successfully', 'UID': uid}, status=200)
+                    if responseData["messages"][0]["status"] == "0":
+                        print("Message sent successfully.")
                     else:
-                        return JsonResponse({'error': 'Phone number not found for this user', 'UID': uid}, status=404)
+                       print(f"Message failed with error: {responseData['messages'][0]['error-text']}")
+
+                    return JsonResponse({'message': 'SMS sent successfully', 'UID': uid}, status=200)
                 else:
-                    return JsonResponse({'error': 'Failed to fetch user phone number in Firebase database'}, status=500)
+                    return JsonResponse({'error': 'Phone number not found for this user', 'UID': uid}, status=404)
 
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)

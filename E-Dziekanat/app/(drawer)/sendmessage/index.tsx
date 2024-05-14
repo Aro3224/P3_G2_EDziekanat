@@ -174,6 +174,7 @@ export default function SendMessagePage() {
             // Send SMS as a fallback
             const response = await axios.post('http://localhost:8000/api/send-sms/', {
               UID: userId,
+              phoneNumber: userData.NrTelefonu,
               body: message,
             }, {
               headers: {
