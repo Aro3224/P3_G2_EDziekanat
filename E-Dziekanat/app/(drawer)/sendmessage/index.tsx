@@ -110,7 +110,7 @@ export default function SendMessagePage() {
     setSelectedUsers(updatedSelectedUsers);
   };
 
-  if(selectedUsers == null){
+  if (selectedUsers == null) {
     setSelectedGroup == null;
   }
   const selectTemplate = (template: Template | null) => {
@@ -132,10 +132,6 @@ export default function SendMessagePage() {
     console.log('Template:', selectedTemplate);
     console.log('Title:', messageTitle);
 
-    if(selectedUsers.length === 0){
-      setErrorMessage("Wybierz komu chcesz wysłać wiadomość.")
-    }
-
     if (!selectedTemplate) {
       setMessage('');
       setMessageTitle('');
@@ -143,83 +139,89 @@ export default function SendMessagePage() {
 
     if (!messageTitle.trim() || !message.trim()) {
       console.log("Tytuł lub treść wiadomości jest pusta.");
-      alert("Tytuł i treść wiadomości nie mogą być puste.");
+      setErrorMessage("Tytuł i treść wiadomości nie mogą być puste.");
       return;
     }
-    
+
 
     setSelectedUsers([]);
-    try {
-      for (const userId of selectedUsers) {
-        const userRef = ref(db, `users/${userId}`);
-        const userSnapshot = await get(userRef);
-        const userData = userSnapshot.val();
-        if (userData && userData.SendSMS == true) {
-          // Send SMS as a fallback
-          const response = await axios.post('http://localhost:8000/api/send-sms/', {
-            UID: userId,
-            body: message,
-          }, {
-            headers: {
-              'Authorization': 'Bearer ' + userToken
-            }
-          });
-          console.log(response.data);
-          setErrorMessage("")
-        }
-        else if (userData && userData.mobtoken) {
-          //Send push notification using Firebase
-          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
-            registrationToken: userData.mobtoken,
-            title: selectedTemplate?.title || messageTitle,
-            message: message,
-            UID: userId,
-          }, {
-            headers: {
-              'Authorization': 'Bearer ' + userToken
-            }
-          });
-          console.log(response.data);
-          setErrorMessage("")
-        }
-        if (userData && !userData.mobtoken && userData.webtoken) {
-          //Send push notification using Firebase
-          const response = await axios.post('http://localhost:8000/api/send-push-notification/', {
-            registrationToken: userData.mobtoken,
-            title: selectedTemplate?.title || messageTitle,
-            message: message,
-            UID: userId,
-          }, {
-            headers: {
-              'Authorization': 'Bearer ' + userToken
-            }
-          });
-          console.log(response.data);
-          setErrorMessage("")
-        }
-        else if (userData && userData.webtoken) {
-          //Send push notification using Firebase
-          const response = await axios.post('http://localhost:8000/api/send-web-notification/', {
-            registrationToken: userData.webtoken,
-            title: selectedTemplate?.title || messageTitle,
-            message: message,
-            UID: userId,
-          }, {
-            headers: {
-              'Authorization': 'Bearer ' + userToken
-            }
-          });
-          console.log(response.data);
-          setErrorMessage("")
-        }
-      }
-      alert("Wiadomość została wysłana");
-    } catch (error) {
-      console.error('Błąd podczas wysyłania wiadomości:', error);
-      alert("Błąd podczas wysyłania wiadomości");
-      setErrorMessage("Błąd podczas wysyłania wiadomości");
+    if (selectedUsers.length === 0) {
+      setErrorMessage("Wybierz komu chcesz wysłać wiadomość.")
     }
-  };
+    else {
+      try {
+        for (const userId of selectedUsers) {
+          const userRef = ref(db, `users/${userId}`);
+          const userSnapshot = await get(userRef);
+          const userData = userSnapshot.val();
+
+          //Save notification data in Firebase
+          if (userData) {
+            const response = await axios.post('http://localhost:8000/api/save-data/', {
+              title: selectedTemplate?.title || messageTitle,
+              message: message,
+              UID: userId,
+            }, {
+              headers: {
+                'Authorization': 'Bearer ' + userToken
+              }
+            });
+            console.log(response.data);
+            setErrorMessage("")
+          }
+
+          if (userData && userData.SendSMS == true) {
+            // Send SMS as a fallback
+            const response = await axios.post('http://localhost:8000/api/send-sms/', {
+              UID: userId,
+              body: message,
+            }, {
+              headers: {
+                'Authorization': 'Bearer ' + userToken
+              }
+            });
+            console.log(response.data);
+            setErrorMessage("")
+          }
+          else if (userData && userData.mobtoken) {
+            //Send push notification using Firebase
+            const response = await axios.post('http://localhost:8000/api/send-notification/', {
+              registrationToken: userData.mobtoken,
+              title: selectedTemplate?.title || messageTitle,
+              message: message,
+              UID: userId,
+            }, {
+              headers: {
+                'Authorization': 'Bearer ' + userToken
+              }
+            });
+            console.log(response.data);
+            setErrorMessage("")
+          }
+          if (userData && userData.webtoken) {
+            //Send push notification using Firebase
+            const response = await axios.post('http://localhost:8000/api/send-notification/', {
+              registrationToken: userData.webtoken,
+              title: selectedTemplate?.title || messageTitle,
+              message: message,
+              UID: userId,
+            }, {
+              headers: {
+                'Authorization': 'Bearer ' + userToken
+              }
+            });
+            console.log(response.data);
+            setErrorMessage("")
+          }
+        }
+        alert("Wiadomość została wysłana");
+      } catch (error) {
+        console.error('Błąd podczas wysyłania wiadomości:', error);
+        alert("Błąd podczas wysyłania wiadomości");
+        setErrorMessage("Błąd podczas wysyłania wiadomości");
+      }
+    };
+  }
 
   const fetchUserRole = async () => {
     try {
@@ -252,11 +254,11 @@ export default function SendMessagePage() {
         const groupRef = ref(db, `groups/${group.id}/Users`);
         const groupSnapshot = await get(groupRef);
         const groupData = groupSnapshot.val();
-    
+
         if (groupData) {
           const groupUserIds: string[] = Object.values(groupData);
           console.log('Identyfikatory użytkowników z grupy:', groupUserIds);
-          
+
           setSelectedUsers(groupUserIds);
           setSelectedGroup(group.id);
         } else {
@@ -267,9 +269,9 @@ export default function SendMessagePage() {
       console.error('Błąd podczas zaznaczania użytkowników z grupy:', error);
     }
   };
-  
-  
-  
+
+
+
   if (redirect) {
     const link = document.createElement('a');
     link.href = "/(drawer)/home";
@@ -301,13 +303,13 @@ export default function SendMessagePage() {
                 onPress={() => toggleUserSelection(user.id)}
               >
                 {Platform.OS !== 'web' ? (
-                <Text style={[styles.userName, selectedUsers.includes(user.id) && styles.selectedText]}>{user.name} {user.surname}</Text>
-              ) : (
-                <>
                   <Text style={[styles.userName, selectedUsers.includes(user.id) && styles.selectedText]}>{user.name} {user.surname}</Text>
-                  <Text style={[styles.userEmail, selectedUsers.includes(user.id) && styles.selectedText]}>{user.email}</Text>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Text style={[styles.userName, selectedUsers.includes(user.id) && styles.selectedText]}>{user.name} {user.surname}</Text>
+                    <Text style={[styles.userEmail, selectedUsers.includes(user.id) && styles.selectedText]}>{user.email}</Text>
+                  </>
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -352,37 +354,37 @@ export default function SendMessagePage() {
               <Text style={[styles.groupID, !selectedTemplate && styles.selectedText]}>Pusty</Text>
             </TouchableOpacity>
           </View>
-          
+
         </View>
 
         {/* Panel dolny (do wpisywania treści wiadomości) */}
         <View style={Platform.OS === "web" ? styles.panelContainer : styles.panelContainerOS}>
-        <View style={styles.lowerPanel}>
-          {/* Panel wprowadzania tytułu wiadomości */}
-          <StyledInputLabel style={{marginVertical: 10}}>Temat</StyledInputLabel>
-          <StyledTextInput
-            style={styles.input}
-            placeholder="Temat"
-            value={messageTitle}
-            onChangeText={setMessageTitle}
-            editable={selectedTemplate === null}
-          />
-        <StyledInputLabel style={{marginBottom: 10}}>Treść</StyledInputLabel>
-        <StyledTextInput
-          style={styles.messageInput}
-          placeholder="Treść wiadomości..."
-          multiline
-          value={message}
-          onChangeText={setMessage}
-          editable={selectedTemplate === null}
-        />
+          <View style={styles.lowerPanel}>
+            {/* Panel wprowadzania tytułu wiadomości */}
+            <StyledInputLabel style={{ marginVertical: 10 }}>Temat</StyledInputLabel>
+            <StyledTextInput
+              style={styles.input}
+              placeholder="Temat"
+              value={messageTitle}
+              onChangeText={setMessageTitle}
+              editable={selectedTemplate === null}
+            />
+            <StyledInputLabel style={{ marginBottom: 10 }}>Treść</StyledInputLabel>
+            <StyledTextInput
+              style={styles.messageInput}
+              placeholder="Treść wiadomości..."
+              multiline
+              value={message}
+              onChangeText={setMessage}
+              editable={selectedTemplate === null}
+            />
           </View>
-          <StyledButton style={{width: '100%'}} onPress={() => sendMessage(userToken)}>
+          <StyledButton style={{ width: '100%' }} onPress={() => sendMessage(userToken)}>
             <ButtonText>Wyślij</ButtonText>
           </StyledButton>
           <MsgBox style={styles.errorMessage}>{errorMessage}</MsgBox>
         </View>
-      
+
       </View>
     </ScrollView>
   );

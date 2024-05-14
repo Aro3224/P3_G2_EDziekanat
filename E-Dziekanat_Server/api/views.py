@@ -202,25 +202,15 @@ def send_sms(request):
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @csrf_exempt
-def send_push_notification(request):
+def save_data(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         title = data.get('title')
         message_body = data.get('message')
-        registration_token = data.get('registrationToken')
         uid = data.get('UID')
 
-        if registration_token:
+        if uid:
             try:
-                # Wysyłanie powiadomienia
-                message = messaging.Message(
-                    notification=messaging.Notification(title=title, body=message_body),
-                    token=registration_token,
-                )
-                response = messaging.send(message)
-                print('Powiadomienie wysłane:', response)
-                print(registration_token, title, message)
-
                 # Generowanie znacznika czasu na serwerze
                 timestamp = int(time.time() * 1000)  # Przekształć znacznik czasu w milisekundy
 
@@ -235,19 +225,18 @@ def send_push_notification(request):
                 response = requests.post(f"{database_url}/notifications/{uid}.json", json=notification_data)
 
                 if response.status_code == 200:
-                    return JsonResponse({'message': 'Message sent successfully', 'FCMToken': registration_token}, status=200)
+                    return JsonResponse({'message': 'Message saved successfully', 'UID': uid}, status=200)
                 else:
                     return JsonResponse({'error': 'Failed to save notification data in Firebase database'}, status=500)
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)
         else:
-            return JsonResponse({'error': 'Registration token not provided'}, status=400)
+            return JsonResponse({'error': 'UID not provided'}, status=400)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-
 @csrf_exempt
-def send_web_notification(request):
+def send_notification(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         title = data.get('title')
