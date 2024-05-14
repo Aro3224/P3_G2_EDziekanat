@@ -34,7 +34,7 @@ export default function FillDataPage() {
                     setTextNameValue(userData?.Imie || '');
                     setTextSurnameValue(userData?.Nazwisko || '');
                     setTextPhoneValue(userData?.NrTelefonu || '');
-                    if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null) {
+                    if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null || userData?.NrTelefonu == null || userData?.Imie == null || userData?.Nazwisko == null) {
                         setRedirect(false);
                     } else {
                         setRedirect(true);

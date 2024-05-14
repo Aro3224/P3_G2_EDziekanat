@@ -28,7 +28,7 @@ export default function HomePage() {
         if (snapshot.exists()) {
           const userData = snapshot.val();
           setUserName(userData?.Imie || '');
-          if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null) {
+          if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null || userData?.NrTelefonu == null || userData?.Imie == null || userData?.Nazwisko == null) {
             setRedirect(true);
           } else {
             setRedirect(false);

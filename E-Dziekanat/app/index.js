@@ -20,7 +20,7 @@ export default function Page() {
             const snapshot = await get(ref(db, path));
             if (snapshot.exists()) {
               const userData = snapshot.val();
-              if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null) {
+              if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null || userData?.NrTelefonu == null || userData?.Imie == null || userData?.Nazwisko == null) {
                 setIsFirstTimeLoggedIn(false);
                 setIsAuthenticated(true);
               } else {
