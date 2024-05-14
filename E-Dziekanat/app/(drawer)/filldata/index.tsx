@@ -34,7 +34,7 @@ export default function FillDataPage() {
                     setTextNameValue(userData?.Imie || '');
                     setTextSurnameValue(userData?.Nazwisko || '');
                     setTextPhoneValue(userData?.NrTelefonu || '');
-                    if (userData?.NrTelefonu == null || userData?.Imie == null || userData?.Nazwisko == null) {
+                    if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null) {
                         setRedirect(false);
                     } else {
                         setRedirect(true);
@@ -65,7 +65,8 @@ export default function FillDataPage() {
                                     update(ref(db, `users/${userId}/`), {
                                         Imie: textNameValue,
                                         Nazwisko: textSurnameValue,
-                                        NrTelefonu: textPhoneValue
+                                        NrTelefonu: textPhoneValue,
+                                        IsFirstTimeLoggedIn: true
                                     }).then(() => {
                                         // Data saved successfully!
                                         setRedirect(true);

@@ -9,7 +9,7 @@ export default function Page() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState(null);
-  const [isDataInBase, setIsDataInBase] = useState(false);
+  const [isFirstTimeLoggedIn, setIsFirstTimeLoggedIn] = useState(false);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
@@ -20,11 +20,11 @@ export default function Page() {
             const snapshot = await get(ref(db, path));
             if (snapshot.exists()) {
               const userData = snapshot.val();
-              if (userData?.NrTelefonu == null || userData?.Imie == null || userData?.Nazwisko == null) {
-                setIsDataInBase(false);
+              if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null) {
+                setIsFirstTimeLoggedIn(false);
                 setIsAuthenticated(true);
               } else {
-                setIsDataInBase(true);
+                setIsFirstTimeLoggedIn(true);
                 setIsAuthenticated(true);
               }
             }
@@ -43,7 +43,7 @@ export default function Page() {
   }, []);
   
   console.log("isAuthenticated:", isAuthenticated);
-  console.log("isDataInBase:", isDataInBase);
+  console.log("isFirstTimeLoggedIn:", isFirstTimeLoggedIn);
   
   if (isLoading) {
     return <Text>Loading...</Text>;
@@ -58,7 +58,7 @@ export default function Page() {
   };
 
   if (isAuthenticated == true){
-    if(isDataInBase == true){
+    if(isFirstTimeLoggedIn == true){
       return (<Redirect href={"/(drawer)/home"}/>)
     } else {
       return (<Redirect href={"/(drawer)/filldata"}/>)

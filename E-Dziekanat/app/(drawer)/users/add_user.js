@@ -15,6 +15,7 @@ export default function AddUserPage() {
   const [redirect, setRedirect] = useState(false);
   const [textNameValue, setTextNameValue] = useState("");
   const [textSurnameValue, setTextSurnameValue] = useState("");
+  const [textPhoneValue, setTextPhoneValue] = useState("");
   const [textRoleValue, setTextRoleValue] = useState("Wybierz rolę");
   const [showRoleList, setShowRoleList] = useState(false);
   const [message, setMessage] = useState("");
@@ -46,7 +47,7 @@ export default function AddUserPage() {
 
 
 
-  const createUser = async (userEmail, userPass, userToken, userName, userSurname, userRole) => {
+  const createUser = async (userEmail, userPass, userToken, userName, userSurname, userNumber, userRole) => {
 
     setMessage('');
 
@@ -75,12 +76,18 @@ export default function AddUserPage() {
       return;
     }
 
+    if (userNumber == "") {
+      setMessage('Wprowadź numer telefonu');
+      return;
+    }
+
     try {
       const response = await axios.post('http://localhost:8000/api/create-user/', {
         email: userEmail,
         password: userPass,
         Imie: userName,
         Nazwisko: userSurname,
+        NrTelefonu: userNumber,
         Role: userRole,
       },
       {
@@ -94,6 +101,7 @@ export default function AddUserPage() {
       onChangePass("");
       setTextNameValue("");
       setTextSurnameValue("");
+      setTextPhoneValue("");
       setTextRoleValue("Wybierz rolę")
       alert("Użytkownik został dodany");
     } catch (error) {
@@ -181,6 +189,13 @@ export default function AddUserPage() {
                     value={textSurnameValue}
                     placeholder="Naziwsko"
                 />
+                <StyledInputLabel>Numer Telefonu</StyledInputLabel>
+                <StyledTextInput 
+                    style={styles.input}
+                    onChangeText={setTextPhoneValue}
+                    value={textPhoneValue}
+                    placeholder="Numer Telefonu"
+                />
                 <StyledInputLabel>Rola</StyledInputLabel>
                 <SelectRoleButton onPress={toggleRoleList}>
                   <Text>{textRoleValue}</Text>
@@ -198,7 +213,7 @@ export default function AddUserPage() {
                     </RoleList>
                 )}
                 <View style={styles.buttonContainer}>
-                <StyledButton onPress={() => createUser(userEmail, userPass, userToken, textNameValue, textSurnameValue, textRoleValue)}>
+                <StyledButton onPress={() => createUser(userEmail, userPass, userToken, textNameValue, textSurnameValue, textPhoneValue, textRoleValue)}>
                     <ButtonText>Dodaj</ButtonText>
                 </StyledButton>
             </View>

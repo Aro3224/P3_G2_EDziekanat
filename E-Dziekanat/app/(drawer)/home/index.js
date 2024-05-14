@@ -16,6 +16,7 @@ export default function HomePage() {
   const navigation = useNavigation();
   const [userName, setUserName] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [redirect, setRedirect] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -27,6 +28,11 @@ export default function HomePage() {
         if (snapshot.exists()) {
           const userData = snapshot.val();
           setUserName(userData?.Imie || '');
+          if (userData?.IsFirstTimeLoggedIn === false || userData?.IsFirstTimeLoggedIn == null) {
+            setRedirect(true);
+          } else {
+            setRedirect(false);
+          }
         }
         if (user) {
           setUserEmail(user.email);
@@ -125,6 +131,16 @@ export default function HomePage() {
     }
     return enabled;
   };
+
+  if (redirect) {
+    if(Platform.OS =='web'){
+        const link = document.createElement('a');
+        link.href = "/(drawer)/filldata";
+        link.click();
+    }{
+        navigation.navigate('filldata');
+    }
+}
 
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>

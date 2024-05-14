@@ -79,9 +79,17 @@ def create_user(request):
                 if surname:
                     user_data['Nazwisko'] = surname
 
+                phoneNumber = data.get('NrTelefonu')
+                if phoneNumber:
+                    user_data['NrTelefonu'] = phoneNumber
+
                 role = data.get('Role')
                 if role:
                     user_data['Rola'] = role
+
+                user_data['SendSMS'] = True
+
+                user_data['IsFirstTimeLoggedIn'] = False
 
                 response = requests.put(f"{database_url}/users/{uid}.json", json=user_data)
 
