@@ -143,7 +143,7 @@ export default function ButtonsPage() {
   
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-    <View style={styles.container}>
+    <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
       <Drawer.Screen 
         options={{ 
           title:"Przyciski", 
@@ -197,6 +197,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: '15%',
+    paddingVertical: 20,
+  },
+  containerOS: {
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",

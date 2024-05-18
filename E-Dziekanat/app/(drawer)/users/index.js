@@ -132,7 +132,7 @@ const selectUser = (userId) => {
 
 return (
   <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-    <View style={styles.container}>
+    <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
       <Drawer.Screen
         options={{
           title: "Użytkownicy",
@@ -161,7 +161,7 @@ return (
             ) : (
               <>
                 <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
-                <Text style={[styles.userID, selectedUser === item.id && styles.selectedText]}>{item.id}</Text>
+                <Text style={[styles.userID, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -189,6 +189,13 @@ return (
 
 const styles = StyleSheet.create({
 container: {
+  flex: 1,
+  backgroundColor: "#fff",
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: '15%',
+},
+containerOS: {
   flex: 1,
   backgroundColor: "#fff",
   alignItems: "center",

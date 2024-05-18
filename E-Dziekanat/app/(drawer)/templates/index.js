@@ -122,7 +122,7 @@ export default function TemplatesPage() {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-    <View style={styles.container}>
+    <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
       <Drawer.Screen 
         options={{ 
           title:"Szablony", 
@@ -172,7 +172,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: '15%',
     padding: 20,
+  },
+  containerOS: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollViewContainer: {
     flexGrow: 1,

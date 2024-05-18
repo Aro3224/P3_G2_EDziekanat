@@ -135,7 +135,7 @@ export default function EditButtonPage() {
     
     return (
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        <View style={styles.container}>
+        <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
              <Drawer.Screen 
                 options={{ 
                     title:"Edytuj przycisk", 
@@ -204,8 +204,16 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         alignItems: "center",
         justifyContent: "center",
-        padding: 20,
+        paddingVertical: 20,
+        paddingHorizontal: '15%',
     },
+    containerOS: {
+        flex: 1,
+        backgroundColor: "#fff",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+      },
     upperPanel: {
         width: '80%',
         backgroundColor: '#f0f0f0',
