@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 import { onAuthStateChanged, auth, db } from '../components/configs/firebase-config';
 import Login from '../components/screens/Login';
 import { Redirect } from 'expo-router';
 import { ref, get } from "firebase/database";
+import Notif_Mobile from '../components/Notif_Mobile';
 
 export default function Page() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,6 +45,10 @@ export default function Page() {
   
   console.log("isAuthenticated:", isAuthenticated);
   console.log("isFirstTimeLoggedIn:", isFirstTimeLoggedIn);
+
+  if(Platform.OS !=='web'){
+    Notif_Mobile();
+  }
   
   if (isLoading) {
     return <Text>Loading...</Text>;

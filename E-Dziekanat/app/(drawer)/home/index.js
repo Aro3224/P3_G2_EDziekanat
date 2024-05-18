@@ -52,7 +52,7 @@ export default function HomePage() {
           await handleMobileToken(user);
 
           const unsubscribe = messaging().onMessage(async remoteMessage => {
-            Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
+            //Alert.alert(JSON.stringify(remoteMessage.notification.title), JSON.stringify(remoteMessage.notification.body));
           });
 
           return unsubscribe;
