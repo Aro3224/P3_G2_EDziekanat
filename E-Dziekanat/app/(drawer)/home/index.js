@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, Platform, Alert, TouchableOpacity, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, Platform, Alert, TouchableOpacity, ScrollView, FlatList,Pressable } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { auth, db } from '../../../components/configs/firebase-config';
@@ -10,13 +10,71 @@ import messaging from '@react-native-firebase/messaging';
 import { getMessaging, getToken } from "firebase/messaging";
 import { PageTitle, SubTitle } from '../../../components/styles';
 
+const fetchNotifications = async (isAdmin) => {
+  try {
+    const userId = auth.currentUser.uid;
+    let notificationsData = [];
+
+    if (isAdmin) {
+      const usersRef = ref(db, 'users');
+      const usersSnapshot = await get(usersRef);
+
+      if (usersSnapshot.exists()) {
+        const users = usersSnapshot.val();
+        const userIds = Object.keys(users);
+
+        for (const uid of userIds) {
+          const userNotificationsRef = ref(db, `notifications/${uid}`);
+          const userNotificationsSnapshot = await get(userNotificationsRef);
+
+          if (userNotificationsSnapshot.exists()) {
+            const userNotifications = userNotificationsSnapshot.val();
+            const notificationsWithUser = Object.entries(userNotifications)
+              .filter(([_, notification]) => notification.nowaOdpowiedz === true)
+              .map(([notificationId, notification]) => ({
+                id: notificationId,
+                ...notification,
+                userId: uid,
+                userData: users[uid]
+              }));
+            notificationsData.push(...notificationsWithUser);
+          }
+        }
+      }
+    } else {
+      const notificationsRef = ref(db, `notifications/${userId}/`);
+      const snapshot = await get(notificationsRef);
+
+      if (snapshot.exists()) {
+        const fetchedNotificationsData = snapshot.val();
+        const notificationsArray = Object.entries(fetchedNotificationsData)
+          .filter(([_, notification]) => notification.odczytano === false)
+          .map(([notificationId, notification]) => ({
+            id: notificationId,
+            ...notification
+          }));
+        notificationsData = notificationsArray;
+      }
+    }
+
+    return notificationsData;
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    throw error;
+  }
+};
+
+
+
 export default function HomePage() {
   const [userEmail, setUserEmail] = useState(null);
-  const [unreadNotifications, setUnreadNotifications] = useState([]);
   const navigation = useNavigation();
   const [userName, setUserName] = useState(null);
   const [userId, setUserId] = useState(null);
   const [redirect, setRedirect] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [roleLoaded, setRoleLoaded] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -33,6 +91,14 @@ export default function HomePage() {
           } else {
             setRedirect(false);
           }
+          const userRole = userData?.Rola;
+          if (userRole === 'Pracownik') {
+          setIsAdmin(true);
+          } else {
+          setIsAdmin(false);
+          }
+          setRoleLoaded(true);
+          
         }
         if (user) {
           setUserEmail(user.email);
@@ -63,41 +129,6 @@ export default function HomePage() {
     return () => {
       unsubscribe();
     };
-  }, []);
-
-  useEffect(() => {
-    const fetchUnreadNotifications = async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const dbRef = ref(db, `notifications/${user.uid}/`);
-          const unreadNotificationsQuery = query(dbRef, orderByChild('odczytano'), equalTo(false));
-          onValue(unreadNotificationsQuery, (snapshot) => {
-            const unreadNotificationsData = snapshot.val();
-            if (unreadNotificationsData) {
-              const unreadNotificationsArray = [];
-              Object.keys(unreadNotificationsData).forEach(notificationId => {
-                const czasOtrzymania = new Date(unreadNotificationsData[notificationId].czas).toLocaleString();
-                const notification = {
-                  id: notificationId,
-                  ...unreadNotificationsData[notificationId],
-                  czas: czasOtrzymania
-                };
-                unreadNotificationsArray.push(notification);
-              });
-              setUnreadNotifications(unreadNotificationsArray);
-            } else {
-              setUnreadNotifications([]);
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching unread notifications:', error);
-      }
-    };
-
-    fetchUnreadNotifications();
-
   }, []);
 
   const handleMobileToken = async (user) => {
@@ -142,6 +173,51 @@ export default function HomePage() {
     }
 }
 
+
+useEffect(() => {
+  const loadNotifications = async () => {
+    try {
+      if (!roleLoaded) {
+        return;
+      }
+      const notificationsData = await fetchNotifications(isAdmin);
+      setNotifications(notificationsData);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  };
+
+  loadNotifications();
+}, [isAdmin, roleLoaded]);
+
+
+const renderNotificationItem = ({ item }) => {
+  const notificationDate = new Date(item.czas).toLocaleString();
+  const isUnread = item.odczytano === false;
+  const isNewResponse = isAdmin && item.nowaOdpowiedz === true;
+  
+  const navigateToDetails = () => {
+    const params = { uid: item.userId, id: item.id };
+    navigation.navigate('details', params);
+  };
+
+  return (
+    <Pressable onPress={navigateToDetails}>
+      <View style={[styles.notificationItem, isUnread && styles.unreadNotification, isNewResponse && styles.newResponseNotification]}>
+        <View style={styles.notificationContent}>
+          <Text style={styles.notificationTitle}>{item.tytul}</Text>
+          {isAdmin && item.userData && item.userData.email ? (
+            <Text>{item.userData.email}</Text>
+          ) : null}
+        </View>
+        <Text style={styles.notificationDate}>Otrzymano: {notificationDate}</Text>
+      </View>
+    </Pressable>
+  );
+  
+};
+
+
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
@@ -156,19 +232,12 @@ export default function HomePage() {
       <Timer />
       <View style={styles.upperPanel}>
           <Text style={styles.sectionTitle}>Nieodczytane Powiadomienia:</Text>
-          {unreadNotifications.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.notificationItem
-              ]}
-              onPress={() => navigation.navigate('nextpage', { id: item.id })}
-            >
-              <Text style={styles.notificationTitle}>{item.tytul}</Text>
-              <Text style={styles.notificationTime}>{item.czas}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+          <FlatList
+            data={notifications.sort()}
+            renderItem={renderNotificationItem}
+            keyExtractor={(item, index) => index.toString()}
+          />        
+      </View>
     </View>
     </ScrollView>
   );
