@@ -114,14 +114,15 @@ export default function HistoryPage() {
 
   const renderNotificationItem = ({ item }) => {
     const notificationDate = new Date(item.czas).toLocaleString();
+    const notificationReadDate = item.czasOdczytania ? new Date(item.czasOdczytania).toLocaleString() : '';
     const isUnread = item.odczytano === false;
     const isNewResponse = isAdmin && item.nowaOdpowiedz === true;
-    
+  
     const navigateToDetails = () => {
       const params = { uid: item.userId, id: item.id };
       navigation.navigate('details', params);
     };
-
+  
     return (
       <Pressable onPress={navigateToDetails}>
         <View style={[styles.notificationItem, isUnread && styles.unreadNotification, isNewResponse && styles.newResponseNotification]}>
@@ -131,13 +132,19 @@ export default function HistoryPage() {
               <Text>{item.userData.email}</Text>
             ) : null}
           </View>
-          <Text style={styles.notificationDate}>Otrzymano: {notificationDate}</Text>
+          <View style={styles.datesContainer}>
+            <Text style={styles.notificationDate}>Otrzymano: {notificationDate}</Text>
+            {notificationReadDate ? (
+              <Text style={styles.notificationDate}>Odczytano: {notificationReadDate}</Text>
+            ) : (
+              <Text style={styles.notificationDate}></Text>
+            )}
+          </View>
         </View>
       </Pressable>
     );
-    
   };
-
+  
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>
     <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
@@ -218,9 +225,8 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    flexDirection: 'row',
+    flexDirection: 'column', // Changed from row to column for better alignment
     justifyContent: 'space-between',
-    alignItems: 'center',
     backgroundColor: '#dcdcdc',
     borderRadius: 5,
     marginBottom: 10,
@@ -232,7 +238,7 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   notificationContent: {
-    flex: 1,
+    marginBottom: 10,
   },
   notificationText: {
     fontSize: 14,
@@ -261,5 +267,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 15,
     flexDirection: 'row',
+  },
+  datesContainer: {
+    flexDirection: 'column',
   },
 });

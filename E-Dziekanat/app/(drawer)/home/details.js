@@ -73,12 +73,20 @@ export default function NextPage() {
         const titleSnapshot = await get(child(dbRef, 'tytul'));
     
         if (contentSnapshot.exists() && titleSnapshot.exists()) {
-          if(!isAdmin){
-            await set(child(dbRef, 'odczytano'), true);
-            console.log("Odczytano set to True")
+          const currentTime = serverTimestamp();
+    
+          if (!isAdmin) {
+            await update(dbRef, {
+              odczytano: true,
+              czasOdczytania: currentTime
+            });
+            console.log("Odczytano set to True and czasOdczytania updated");
           } else {
-            await set(child(dbRef, 'nowaOdpowiedz'), false);
-            console.log("nowaOdpowiedz set to False")
+            await update(dbRef, {
+              nowaOdpowiedz: false,
+              czasOdczytania: currentTime
+            });
+            console.log("nowaOdpowiedz set to False and czasOdczytania updated");
           }
           console.log("Notification status changed");
         } else {
@@ -89,8 +97,6 @@ export default function NextPage() {
       }
     };
     
-    
-
     const fetchResponses = () => {
       const responsesRef = isAdmin
         ? ref(db, `notifications/${userId}/${notificationId}/odpowiedzi`)
