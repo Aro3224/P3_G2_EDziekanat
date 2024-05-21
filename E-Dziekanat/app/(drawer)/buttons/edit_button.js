@@ -6,21 +6,18 @@ import { ref, get, onValue, set } from 'firebase/database';
 import { db, auth } from '../../../components/configs/firebase-config';
 import { StyledButton, ButtonText, PageTitle } from '../../../components/styles';
 
-
 export default function EditButtonPage() {
     const route = useRoute();
     const buttonId = route.params?.id;
     const path = 'buttons/'+ buttonId;
     const [loading, setLoading] = useState(true);
-    const [selectedUser, setSelectedUser] = useState("")
-    const [selectedGroup, setSelectedGroup] = useState("")
+    const [selectedUser, setSelectedUser] = useState("");
+    const [selectedGroup, setSelectedGroup] = useState("");
     const [groups, setGroups] = useState([]);
     const [redirect, setRedirect] = useState(false);
     const [users, setUsers] = useState([]);
 
-
     useEffect(() => {
-
         const readData = async () => {
             try {
                 const snapshot = await get(ref(db, path));
@@ -39,59 +36,57 @@ export default function EditButtonPage() {
         };
         readData();
 
-        const usersRef = ref(db,'/users');
+        const usersRef = ref(db, '/users');
         onValue(usersRef, (snapshot) => {
             const usersData = snapshot.val();
             if (usersData) {
-            const usersArray = Object.keys(usersData).map(key => ({
-                id: key,
-                ...usersData[key]
-            }));
-            setUsers(usersArray);
+                const usersArray = Object.keys(usersData).map(key => ({
+                    id: key,
+                    ...usersData[key]
+                }));
+                setUsers(usersArray);
             }
         });
 
         const groupsRef = ref(db, '/groups');
         onValue(groupsRef, async (snapshot) => {
-        const groupsData = snapshot.val();
-        if (groupsData) {
-            const groupsArray = await Promise.all(Object.keys(groupsData).map(async key => {
-            const users = groupsData[key].Users || [];
-            const usersDetails = await Promise.all(users.map(async userID => {
-                const userSnapshot = await get(ref(db, `users/${userID}`));
-                const userData = userSnapshot.val();
-                return `${userData?.Imie} ${userData?.Nazwisko}`;
-            }));
-            return {
-                id: key,
-                users: usersDetails
-            };
-            }));
-            setGroups(groupsArray);
-        }
+            const groupsData = snapshot.val();
+            if (groupsData) {
+                const groupsArray = await Promise.all(Object.keys(groupsData).map(async key => {
+                    const users = groupsData[key].Users || [];
+                    const usersDetails = await Promise.all(users.map(async userID => {
+                        const userSnapshot = await get(ref(db, `users/${userID}`));
+                        const userData = userSnapshot.val();
+                        return `${userData?.Imie} ${userData?.Nazwisko}`;
+                    }));
+                    return {
+                        id: key,
+                        users: usersDetails
+                    };
+                }));
+                setGroups(groupsArray);
+            }
         });
 
         const fetchUserRole = async () => {
             try {
-              const user = auth.currentUser;
-              const path = 'users/' + user.uid;
-              const snapshot = await get(ref(db, path));
-              if (snapshot.exists()) {
-                const userData = snapshot.val();
-                if (userData?.Rola == "Wykładowca") {
-                  setRedirect(true);
-                } else {
-                  setRedirect(false);
+                const user = auth.currentUser;
+                const path = 'users/' + user.uid;
+                const snapshot = await get(ref(db, path));
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    if (userData?.Rola == "Wykładowca") {
+                        setRedirect(true);
+                    } else {
+                        setRedirect(false);
+                    }
                 }
-              }
             } catch (error) {
-              console.error('Error fetching user data:', error);
+                console.error('Error fetching user data:', error);
             }
-          };
+        };
         fetchUserRole();
     }, []);
-
-
 
     if (loading) {
         return (
@@ -102,95 +97,98 @@ export default function EditButtonPage() {
     }
 
     const selectUser = (itemID) => {
-        setSelectedGroup("")
-        setSelectedUser(itemID);
+        setSelectedGroup("");
         console.log(itemID)
-    }
-    const selectGroup = (itemID) => {
-        setSelectedUser("");
-        setSelectedGroup(itemID)
-        console.log(itemID)
+        setSelectedUser(prevSelectedUser => (prevSelectedUser === itemID ? "" : itemID));
     }
 
+    const selectGroup = (itemID) => {
+        setSelectedUser("");
+        console.log(itemID)
+        setSelectedGroup(prevSelectedGroup => (prevSelectedGroup === itemID ? "" : itemID));
+    }
 
     const editButton = async () => {
         try {      
             const editButtonRef = ref(db, `/buttons/${buttonId}`);
-            await set(editButtonRef, {userID: selectedUser==="" ? selectedGroup : selectedUser, type:selectedUser==="" ? 'group' : 'user'});
+            await set(editButtonRef, {userID: selectedUser === "" ? selectedGroup : selectedUser, type: selectedUser === "" ? 'group' : 'user'});
       
             console.log('Przycisk został dodany do bazy danych.');
-            alert('Użytkownik został przypisany do przycisku');
-          } catch (error) {
+            if (selectedGroup === "" && selectedUser === "") {
+                alert('Do przycisku nie jest przypisany żaden użytkownik');
+            } else {
+                alert('Użytkownik został przypisany do przycisku');
+            }
+        } catch (error) {
             console.error('Błąd podczas dodawania przycisku:', error);
             alert('Wystąpił błąd podczas dodawania przycisku. Spróbuj ponownie później.');
-          }
+        }
     }
-    
-      if (redirect) {
+
+    if (redirect) {
         const link = document.createElement('a');
         link.href = "/(drawer)/home";
         link.click();
-      }
+    }
 
-    
     return (
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
-             <Drawer.Screen 
-                options={{ 
-                    title:"Edytuj przycisk", 
-                    headerShown: true, 
-                }}
-            />
-            <PageTitle >Edytuj Przycisk {buttonId}</PageTitle >
-            <View style={styles.upperPanel}>
-                <Text style={styles.sectionTitle}>Wybierz użytkownika:</Text>
-                {users.map((item) => (
-                <TouchableOpacity
-                    key={item.id}
-                    style={[
-                    styles.item,
-                    selectedUser === item.id && styles.selectedItem
-                    ]}
-                    onPress={() => selectUser(item.id)}
-                >
-                    {Platform.OS !== 'web' ? (
-                    <Text style={[styles.userName, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
-                    ) : (
-                    <>
-                        <Text style={[styles.userName, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
-                        <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
-                    </>
-                    )}
-                </TouchableOpacity>
-                ))}
-            </View>
-            <View style={styles.upperPanel}>
-                <Text style={styles.sectionTitle}>Wybierz grupę:</Text>
-                {groups.map((item) => (
-                    <TouchableOpacity
-                    key={item.id}
-                    style={[
-                        styles.item,
-                        selectedGroup === item.id && styles.selectedItem
-                    ]}
-                    onPress={() => selectGroup(item.id)}
-                    >
-                    {Platform.OS !== 'web' ? (
-                        <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
-                    ) : (
-                        <>
-                        <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
-                        <Text style={[styles.groupMembers, selectedGroup === item.id && styles.selectedText]}>{item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
-                        </>
-                    )}
-                    </TouchableOpacity>
-                ))}
+            <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
+                <Drawer.Screen 
+                    options={{ 
+                        title:"Edytuj przycisk", 
+                        headerShown: true, 
+                    }}
+                />
+                <PageTitle>Edytuj Przycisk {buttonId}</PageTitle>
+                <View style={styles.upperPanel}>
+                    <Text style={styles.sectionTitle}>Wybierz użytkownika:</Text>
+                    {users.map((item) => (
+                        <TouchableOpacity
+                            key={item.id}
+                            style={[
+                                styles.item,
+                                selectedUser === item.id && styles.selectedItem
+                            ]}
+                            onPress={() => selectUser(item.id)}
+                        >
+                            {Platform.OS !== 'web' ? (
+                                <Text style={[styles.userName, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                            ) : (
+                                <>
+                                    <Text style={[styles.userName, selectedUser === item.id && styles.selectedText]}>{item.Imie} {item.Nazwisko}</Text>
+                                    <Text style={[styles.userEmail, selectedUser === item.id && styles.selectedText]}>{item.email}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    ))}
                 </View>
-            <StyledButton onPress={editButton}>
-                <ButtonText>Zapisz</ButtonText>
-            </StyledButton>
-        </View>
+                <View style={styles.upperPanel}>
+                    <Text style={styles.sectionTitle}>Wybierz grupę:</Text>
+                    {groups.map((item) => (
+                        <TouchableOpacity
+                            key={item.id}
+                            style={[
+                                styles.item,
+                                selectedGroup === item.id && styles.selectedItem
+                            ]}
+                            onPress={() => selectGroup(item.id)}
+                        >
+                            {Platform.OS !== 'web' ? (
+                                <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+                            ) : (
+                                <>
+                                    <Text style={[styles.groupID, selectedGroup === item.id && styles.selectedText]}>{item.id}</Text>
+                                    <Text style={[styles.groupMembers, selectedGroup === item.id && styles.selectedText]}>{item.users.length > 0 ? item.users.join(', ') : 'Brak członków'}</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+                <StyledButton onPress={editButton}>
+                    <ButtonText>Zapisz</ButtonText>
+                </StyledButton>
+            </View>
         </ScrollView>
     );
 }
@@ -198,7 +196,7 @@ export default function EditButtonPage() {
 const styles = StyleSheet.create({
     scrollViewContainer: {
         flexGrow: 1,
-      },
+    },
     container: {
         flex: 1,
         backgroundColor: "#fff",
@@ -213,7 +211,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         padding: 20,
-      },
+    },
     upperPanel: {
         width: '80%',
         backgroundColor: '#f0f0f0',
@@ -247,11 +245,11 @@ const styles = StyleSheet.create({
     groupID: {
         fontSize: 14,
         fontWeight: 'bold',
-      },
-      groupMembers: {
+    },
+    groupMembers: {
         fontSize: 14,
         color: '#666',
-      },
+    },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',

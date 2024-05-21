@@ -5,7 +5,7 @@ import { db } from '../../../components/configs/firebase-config';
 import { ref, get, child, set, push, serverTimestamp, onValue, update } from "firebase/database";
 import { useRoute } from '@react-navigation/native';
 import { auth } from '../../../components/configs/firebase-config';
-import { PageTitle, StyledButton, ButtonText } from '../../../components/styles';
+import { PageTitle, StyledButton, ButtonText, MsgBox } from '../../../components/styles';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -21,6 +21,7 @@ export default function NextPage() {
   const userId = route.params.uid;
   const currentUserUid = auth.currentUser.uid;
   const navigation = useNavigation();
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -135,32 +136,37 @@ export default function NextPage() {
   }, [notificationId, isAdmin]);
 
   const handleSendResponse = async () => {
-    try {
-      const dbRef = isAdmin
-        ? ref(db, `notifications/${userId}/${notificationId}/odpowiedzi`)
-        : ref(db, `notifications/${currentUserUid}/${notificationId}/odpowiedzi`);
-  
-      const responseObj = {
-        tresc: response,
-        data: serverTimestamp(),
-        isAdmin: isAdmin
-      };
-  
-      await push(dbRef, responseObj);
-      setResponse('');
-  
-      if (!isAdmin) {
-        await update(ref(db, `notifications/${currentUserUid}/${notificationId}`), {
-          nowaOdpowiedz: true
-        });
+    if (response != ''){
+      try {
+        const dbRef = isAdmin
+          ? ref(db, `notifications/${userId}/${notificationId}/odpowiedzi`)
+          : ref(db, `notifications/${currentUserUid}/${notificationId}/odpowiedzi`);
+    
+        const responseObj = {
+          tresc: response,
+          data: serverTimestamp(),
+          isAdmin: isAdmin
+        };
+    
+        await push(dbRef, responseObj);
+        setResponse('');
+        setErrorMessage('');
+    
+        if (!isAdmin) {
+          await update(ref(db, `notifications/${currentUserUid}/${notificationId}`), {
+            nowaOdpowiedz: true
+          });
+        }
+        if (isAdmin) {
+          await update(ref(db, `notifications/${userId}/${notificationId}`), {
+            odczytano: false
+          });
+        }
+      } catch (error) {
+        console.error('Error saving response:', error);
       }
-      if (isAdmin) {
-        await update(ref(db, `notifications/${userId}/${notificationId}`), {
-          odczytano: false
-        });
-      }
-    } catch (error) {
-      console.error('Error saving response:', error);
+    }else {
+      setErrorMessage("Wprowadź treść odpowiedzi");
     }
   };
   
@@ -221,6 +227,7 @@ export default function NextPage() {
       <StyledButton onPress={handleSendResponse}>
         <ButtonText>Wyślij</ButtonText>
       </StyledButton>
+      <MsgBox style={styles.errorMessage}>{errorMessage}</MsgBox>
     </View>
     </ScrollView>
   );
@@ -279,5 +286,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     padding: 30,
     flex: 1,
+  },
+  errorMessage: {
+    color: 'red',
+    fontSize: 18,
   },
 });
