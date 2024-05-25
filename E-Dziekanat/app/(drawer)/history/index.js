@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Text, View, StyleSheet, FlatList, Platform, ScrollView, Pressable } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
@@ -6,6 +6,8 @@ import { auth, db } from '../../../components/configs/firebase-config';
 import { ref, get } from "firebase/database";
 import { PageTitle, StyledButton, ButtonText } from '../../../components/styles';
 import { useNavigation } from '@react-navigation/native';
+
+const PAGE_SIZE = 20;
 
 const fetchNotifications = async (isAdmin) => {
   try {
@@ -26,14 +28,13 @@ const fetchNotifications = async (isAdmin) => {
 
           if (userNotificationsSnapshot.exists()) {
             const userNotifications = userNotificationsSnapshot.val();
-            const userNotificationsArray = Object.entries(userNotifications);
-            const notificationsWithUser = userNotificationsArray.map(([notificationId, notification]) => ({
+            const notificationsWithUser = Object.entries(userNotifications).map(([notificationId, notification]) => ({
               id: notificationId,
               ...notification,
               userId: uid,
-              userData: users[uid]
+              userData: users[uid],
             }));
-            notificationsData = [...notificationsData, ...notificationsWithUser];
+            notificationsData.push(...notificationsWithUser);
           }
         }
       }
@@ -43,15 +44,14 @@ const fetchNotifications = async (isAdmin) => {
 
       if (snapshot.exists()) {
         const fetchedNotificationsData = snapshot.val();
-        const notificationsArray = Object.entries(fetchedNotificationsData);
-        notificationsData = notificationsArray.map(([notificationId, notification]) => ({
+        notificationsData = Object.entries(fetchedNotificationsData).map(([notificationId, notification]) => ({
           id: notificationId,
-          ...notification
+          ...notification,
         }));
       }
     }
 
-    return notificationsData;
+    return notificationsData.sort((a, b) => b.czas - a.czas);
   } catch (error) {
     console.error('Error fetching notifications:', error);
     throw error;
@@ -61,10 +61,13 @@ const fetchNotifications = async (isAdmin) => {
 export default function HistoryPage() {
   const [notifications, setNotifications] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [sortBy, setSortBy] = useState('newest');
-  const [sortDescending, setSortDescending] = useState(true);
+  const [sortDescending, setSortDescending] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [allNotifications, setAllNotifications] = useState([]);
   const navigation = useNavigation();
-  
+  const [previousButtonDisabled, setPreviousButtonDisabled] = useState(true);
+  const [nextButtonDisabled, setNextButtonDisabled] = useState(false);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -73,11 +76,7 @@ export default function HistoryPage() {
         const roleRef = ref(db, `users/${userId}/Rola`);
         const roleSnapshot = await get(roleRef);
 
-        if (roleSnapshot.exists() && roleSnapshot.val() === 'Pracownik') {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-        }
+        setIsAdmin(roleSnapshot.exists() && roleSnapshot.val() === 'Pracownik');
       } catch (error) {
         console.error('Error checking user role:', error);
       }
@@ -86,98 +85,139 @@ export default function HistoryPage() {
     checkUserRole();
   }, []);
 
-  useEffect(() => {
-    const loadNotifications = async () => {
-      try {
-        const notificationsData = await fetchNotifications(isAdmin);
-        setNotifications(notificationsData);
-      } catch (error) {
-        console.error('Error loading notifications:', error);
+  const sortNotificationsByTime = (notificationsData, descending) => {
+    return notificationsData.sort((a, b) => {
+      if (descending) {
+        return a.czas - b.czas;
+      } else {
+        return b.czas - a.czas;
       }
-    };
-
-    loadNotifications();
-  }, [isAdmin]);
-
-  const toggleSortOrder = () => {
-    setSortDescending(!sortDescending);
+    });
   };
-
-  const refreshNotifications = async () => {
+  
+  const loadNotifications = useCallback(async () => {
+    setLoading(true);
     try {
       const notificationsData = await fetchNotifications(isAdmin);
-      setNotifications(notificationsData);
+      const sortedNotifications = sortNotificationsByTime(notificationsData, sortDescending);
+      setAllNotifications(sortedNotifications);
+      setNotifications(sortedNotifications.slice(0, PAGE_SIZE));
     } catch (error) {
-      console.error('Error refreshing notifications:', error);
+      console.error('Error loading notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAdmin, sortDescending]);
+  
+
+  useEffect(() => {
+    loadNotifications();
+  }, [isAdmin, loadNotifications]);
+
+  const toggleSortOrder = () => {
+    setSortDescending(prevState => !prevState);
+    const sortedNotifications = sortNotificationsByTime(allNotifications, !sortDescending);
+    setNotifications(sortedNotifications.slice(0, PAGE_SIZE));
+  };
+  
+
+  const refreshNotifications = async () => {
+    setCurrentPage(1);
+    setNotifications([]);
+    await loadNotifications();
+  };
+
+  const handlePageChange = (direction) => {
+    const newPage = currentPage + direction;
+    const start = (newPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    const pageData = allNotifications.slice(start, end);
+    setCurrentPage(newPage);
+    setNotifications(pageData);
+  
+    if (newPage <= 1) {
+      setPreviousButtonDisabled(true);
+    } else {
+      setPreviousButtonDisabled(false);
+    }
+  
+    if ((newPage * PAGE_SIZE) >= allNotifications.length) {
+      setNextButtonDisabled(true);
+    } else {
+      setNextButtonDisabled(false);
     }
   };
+  
 
   const renderNotificationItem = ({ item }) => {
     const notificationDate = new Date(item.czas).toLocaleString();
     const notificationReadDate = item.czasOdczytania ? new Date(item.czasOdczytania).toLocaleString() : '';
     const isUnread = item.odczytano === false;
     const isNewResponse = isAdmin && item.nowaOdpowiedz === true;
-  
+
     const navigateToDetails = () => {
       const params = { uid: item.userId, id: item.id };
       navigation.navigate('details', params);
     };
-  
+
     return (
       <Pressable onPress={navigateToDetails}>
         <View style={[styles.notificationItem, isUnread && styles.unreadNotification, isNewResponse && styles.newResponseNotification]}>
           <View style={styles.notificationContent}>
             <Text style={styles.notificationTitle}>{item.tytul}</Text>
-            {isAdmin && item.userData && item.userData.email ? (
+            {isAdmin && item.userData?.email && (
               <Text>{item.userData.email}</Text>
-            ) : null}
+            )}
           </View>
           <View style={styles.datesContainer}>
             <Text style={styles.notificationDate}>Otrzymano: {notificationDate}</Text>
-            {notificationReadDate ? (
+            {notificationReadDate && (
               <Text style={styles.notificationDate}>Odczytano: {notificationReadDate}</Text>
-            ) : (
-              <Text style={styles.notificationDate}></Text>
             )}
           </View>
         </View>
       </Pressable>
     );
   };
-  
+
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-    <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
-      <Drawer.Screen 
-        options={{ 
-          title: isAdmin ? "Wszystkie powiadomienia" : "Historia powiadomień", 
-          headerShown: true, 
-          headerLeft: ()=> <DrawerToggleButton/>}} />
-      
-      <PageTitle>Lista powiadomień</PageTitle>
-      <View style={Platform.OS === "web" ? styles.buttonContainer : styles.buttonContainerOS}>
+      <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
+        <Drawer.Screen 
+          options={{ 
+            title: isAdmin ? "Wszystkie powiadomienia" : "Historia powiadomień", 
+            headerShown: true, 
+            headerLeft: () => <DrawerToggleButton />
+          }} 
+        />
+        <PageTitle>Lista powiadomień</PageTitle>
+        <View style={Platform.OS === "web" ? styles.buttonContainer : styles.buttonContainerOS}>
         <StyledButton onPress={toggleSortOrder}>
-          <ButtonText>{sortDescending ? 'Od najstarszych' : 'Od najnowszych'}</ButtonText>
+          <ButtonText>{sortDescending ? 'Od najnowszych' : 'Od najstarszych'}</ButtonText>
         </StyledButton>
-        <StyledButton onPress={refreshNotifications}>
-          <ButtonText>Odśwież</ButtonText>
+          <StyledButton onPress={refreshNotifications}>
+            <ButtonText>Odśwież</ButtonText>
+          </StyledButton>
+        </View>
+        <View style={styles.upperPanel}>
+          <Text style={styles.sectionTitle}>Powiadomienia:</Text>
+          <FlatList
+            data={notifications}
+            renderItem={renderNotificationItem}
+            keyExtractor={(item, index) => index.toString()}
+            ListFooterComponent={loading && <Text>Ładowanie...</Text>}
+          />
+        </View>
+        <View style={styles.paginationContainer}>
+        <StyledButton onPress={() => handlePageChange(-1)} disabled={previousButtonDisabled} style={previousButtonDisabled ? styles.disabledButton : null}>
+          <ButtonText>Poprzednia</ButtonText>
         </StyledButton>
+        <Text style={styles.pageIndicator}>{currentPage}</Text>
+        <StyledButton onPress={() => handlePageChange(1)} disabled={nextButtonDisabled} style={nextButtonDisabled ? styles.disabledButton : null}>
+          <ButtonText>Następna</ButtonText>
+        </StyledButton>
+        </View>
       </View>
-      <View style={styles.upperPanel}>
-      <Text style={styles.sectionTitle}>Powiadomienia:</Text>
-      <FlatList
-        data={notifications.sort((a, b) => {
-          if (sortBy === 'newest') {
-            return sortDescending ? b.czas - a.czas : a.czas - b.czas;
-          } else {
-            return sortDescending ? a.czas - b.czas : b.czas - a.czas;
-          }
-        })}
-        renderItem={renderNotificationItem}
-        keyExtractor={(item, index) => index.toString()}
-      />
-      </View>
-    </View>
     </ScrollView>
   );
 }
@@ -198,11 +238,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
   },
   upperPanel: {
     width: '90%',
@@ -225,8 +260,6 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 20,
     paddingHorizontal: 20,
-    flexDirection: 'column', // Changed from row to column for better alignment
-    justifyContent: 'space-between',
     backgroundColor: '#dcdcdc',
     borderRadius: 5,
     marginBottom: 10,
@@ -240,28 +273,15 @@ const styles = StyleSheet.create({
   notificationContent: {
     marginBottom: 10,
   },
-  notificationText: {
-    fontSize: 14,
-  },
-  sortButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
   unreadNotification: {
     backgroundColor: "#ffcccc",
-  },
-  newResponseText: {
-    color: 'red',
-    fontWeight: 'bold',
-    marginLeft: 10,
   },
   buttonContainer: {
     flexDirection: 'row',
     width: '93%',
     paddingHorizontal: 20,
     marginTop: 15,
-    justifyContent: 'flex-end'
+    justifyContent: 'flex-end',
   },
   buttonContainerOS: {
     paddingHorizontal: 20,
@@ -270,5 +290,17 @@ const styles = StyleSheet.create({
   },
   datesContainer: {
     flexDirection: 'column',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  pageIndicator: {
+    fontSize: 16,
+    marginHorizontal: 10,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
