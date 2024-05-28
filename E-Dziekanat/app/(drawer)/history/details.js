@@ -74,12 +74,18 @@ export default function NextPage() {
         const titleSnapshot = await get(child(dbRef, 'tytul'));
     
         if (contentSnapshot.exists() && titleSnapshot.exists()) {
+          const currentTime = serverTimestamp();
+
           if(!isAdmin){
             await set(child(dbRef, 'odczytano'), true);
             console.log("Odczytano set to True")
+            await set(child(dbRef, 'czasOdczytania'), currentTime);
+            console.log("czasOdczytania updated")
           } else {
             await set(child(dbRef, 'nowaOdpowiedz'), false);
             console.log("nowaOdpowiedz set to False")
+            await set(child(dbRef, 'czasOdczytania'), currentTime);
+            console.log("czasOdczytania updated")
           }
           console.log("Notification status changed");
         } else {

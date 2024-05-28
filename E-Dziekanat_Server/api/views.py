@@ -205,16 +205,15 @@ def save_data(request):
 
         if uid:
             try:
-                # Generowanie znacznika czasu na serwerze
-                timestamp = int(time.time() * 1000)  # Przekształć znacznik czasu w milisekundy
+                timestamp = int(time.time() * 1000)
 
-                # Zapisywanie powiadomienia w bazie danych Firebase Realtime Database
                 database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
                 notification_data = {
                     'tytul': title,
                     'tresc': message_body,
                     'czas': timestamp,
-                    'odczytano': False  # Dodanie zmiennej boolowskiej o nazwie "odczytano" ustawionej na False
+                    'odczytano': False,
+                    'soft_deleted': False
                 }
                 response = requests.post(f"{database_url}/notifications/{uid}.json", json=notification_data)
 
@@ -239,7 +238,6 @@ def send_notification(request):
 
         if registration_token:
             try:
-                # Wysyłanie powiadomienia
                 push_service = FCMNotification(api_key="AAAAFrz_bZ0:APA91bH6oyJxF6tAzuTY3LIG193k4bITsnLsEZEFB0funtYs3oCfPF0JfRZlsNwN5mzy9b6QitIqaP757lcrrG3r56wWjrPRq1_F6SrzIqkr9uh1TEfkDm60PBbmBlA4rHHpuz7JEOUb")
                 result = push_service.notify_single_device(registration_id=registration_token, message_title=title, message_body=message_body)
 
@@ -261,7 +259,6 @@ def delete_data(request):
         uid = deletedata.get('UID')
         if uid:
             try:
-                # Usuń dane użytkownika z Firebase Realtime Database
                 database_url = "https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/"
                 response = requests.delete(f"{database_url}/users/{uid}/Imie.json")
                 response = requests.delete(f"{database_url}/users/{uid}/Nazwisko.json")

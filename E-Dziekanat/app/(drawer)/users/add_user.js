@@ -187,7 +187,7 @@ export default function AddUserPage() {
                     style={styles.input}
                     onChangeText={setTextSurnameValue}
                     value={textSurnameValue}
-                    placeholder="Naziwsko"
+                    placeholder="Nazwisko"
                 />
                 <StyledInputLabel>Numer Telefonu</StyledInputLabel>
                 <StyledTextInput 
