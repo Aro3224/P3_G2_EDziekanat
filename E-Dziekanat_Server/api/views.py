@@ -8,8 +8,8 @@ from firebase_admin import auth, messaging, db
 import time
 import json
 import requests
-import vonage
 from pyfcm import FCMNotification
+from sinch import SinchClient
 
 
 @csrf_exempt
@@ -167,22 +167,18 @@ def send_sms(request):
         if uid:
             try:
                 if nr_telefonu:
-                    # Vonage Account SID i Auth Token
-                    client = vonage.Client(key="c5af630b", secret="VrAQHW3cFeD32Pmy")
-                    sms = vonage.Sms(client)
-
-                    responseData = sms.send_message(
-                        {
-                            "from": "E-dziekanat",
-                            "to": '48' + nr_telefonu,
-                            "text": content,
-                        }
+                    sinch_client = SinchClient(
+                        key_id="d2da0250-91fd-4a47-bb19-a07c55f410d2",
+                        key_secret="doqdV1JWz6Xn0sFG.r9Gmr6uBo",
+                        project_id="1e2b36ab-896e-4660-aaea-6b4bdc067708"
                     )
 
-                    if responseData["messages"][0]["status"] == "0":
-                        print("Message sent successfully.")
-                    else:
-                       print(f"Message failed with error: {responseData['messages'][0]['error-text']}")
+                    send_batch_response = sinch_client.sms.batches.send(
+                        body=content + " - Dziekanat",
+                        to=["48" + nr_telefonu],
+                        from_="447441421902",
+                        delivery_report="none"
+                    )
 
                     return JsonResponse({'message': 'SMS sent successfully', 'UID': uid}, status=200)
                 else:

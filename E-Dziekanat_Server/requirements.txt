@@ -3,5 +3,5 @@ psycopg2>=2.8
 djangorestframework
 django-cors-headers
 firebase_admin
-vonage
+sinch
 pyfcm
