@@ -3,7 +3,6 @@ import board
 import busio
 import digitalio
 from adafruit_mcp230xx.mcp23017 import MCP23017
-import adafruit_aw9523
 import firebase_admin
 from firebase_admin import credentials, db
 from pyfcm import FCMNotification
@@ -33,33 +32,21 @@ sms = vonage.Sms(vonage_client)
 
 # Initialize I2C buses
 i2c1 = busio.I2C(board.SCL, board.SDA)
-i2c2 = board.I2C()
 
 # Initialize expanders
 mcp1 = MCP23017(i2c1, address=0x20)
 mcp2 = MCP23017(i2c1, address=0x21)
-aw1 = adafruit_aw9523.AW9523(i2c2, address=0x58)
-aw2 = adafruit_aw9523.AW9523(i2c2, address=0x59)
-aw3 = adafruit_aw9523.AW9523(i2c2, address=0x5a)
 
 # Configure pins (example for configuration)
-NUM_PINS_EXPANDER_1 = 0
-NUM_PINS_EXPANDER_2 = 0
-NUM_PINS_EXPANDER_3 = 0
-NUM_PINS_EXPANDER_4 = 2
-NUM_PINS_EXPANDER_5 = 2
+NUM_PINS_EXPANDER_1 = 3
+NUM_PINS_EXPANDER_2 = 3
 
 pins1 = [mcp1.get_pin(i) for i in range(NUM_PINS_EXPANDER_1)]
 pins2 = [mcp2.get_pin(i) for i in range(NUM_PINS_EXPANDER_2)]
-pins3 = [aw1.get_pin(i) for i in range(NUM_PINS_EXPANDER_3)]
-pins4 = [aw2.get_pin(i) for i in range(NUM_PINS_EXPANDER_4)]
-pins5 = [aw3.get_pin(i) for i in range(NUM_PINS_EXPANDER_5)]
 
 for pin in pins1 + pins2:
     pin.direction = digitalio.Direction.INPUT
     pin.pull = digitalio.Pull.UP
-for pin in pins3 + pins4 + pins5:
-    pin.direction = digitalio.Direction.INPUT
 
 def send_notification(btn_number):
     try:
@@ -93,7 +80,7 @@ def notify_user(user_id, title, content):
         user_data = db.reference(f"/users/{user_id}").get()
         if user_data:
             send_sms = user_data.get('SendSMS', False)
-            if send_sms:  # send_sms is a boolean, should not be called
+            if send_sms:
                 phone_number = user_data.get('NrTelefonu')
                 if phone_number:
                     send_sms_message(phone_number, title, content)
@@ -153,7 +140,7 @@ def log_notification(user_id, title, content):
 def main():
     logging.info("Button Handler ready")
     while True:
-        if not any([pin.value for pin in pins1 + pins2 + pins3 + pins4 + pins5]):
+        if not any([pin.value for pin in pins1 + pins2]):
             time.sleep(0.1)
             continue
         handle_button_presses()
@@ -166,15 +153,7 @@ def handle_button_presses():
     for i, pin in enumerate(pins2):
         if not pin.value:
             handle_button_press(i + 1, "Expander 2")
-    for i, pin in enumerate(pins3):
-        if not pin.value:
-            handle_button_press(i + 1, "Expander 3")
-    for i, pin in enumerate(pins4):
-        if not pin.value:
-            handle_button_press(i + 1, "Expander 4")
-    for i, pin in enumerate(pins5):
-        if not pin.value:
-            handle_button_press(i + 1, "Expander 5")
+
 
 def handle_button_press(button_number, expander):
     logging.info(f"Button {button_number} ({expander}) pressed!")
