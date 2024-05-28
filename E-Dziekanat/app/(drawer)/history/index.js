@@ -44,7 +44,6 @@ const fetchNotifications = async (isAdmin) => {
 
       if (snapshot.exists()) {
         const fetchedNotificationsData = snapshot.val();
-        // Filtrujemy powiadomienia, usuwając te, gdzie soft_deleted jest ustawione na false
         const filteredNotifications = Object.entries(fetchedNotificationsData)
           .filter(([notificationId, notification]) => !notification.soft_deleted)
           .map(([notificationId, notification]) => ({

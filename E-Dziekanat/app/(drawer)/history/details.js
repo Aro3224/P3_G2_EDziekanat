@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, TextInput, Pressable, FlatList, ScrollView, Platform} from 'react-native';
+import { Text, View, StyleSheet, TextInput, Pressable, FlatList, ScrollView, Platform } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { db } from '../../../components/configs/firebase-config';
 import { ref, get, child, set, push, serverTimestamp, onValue, update } from "firebase/database";
@@ -72,11 +72,11 @@ export default function NextPage() {
       try {
         const contentSnapshot = await get(child(dbRef, 'tresc'));
         const titleSnapshot = await get(child(dbRef, 'tytul'));
-    
+
         if (contentSnapshot.exists() && titleSnapshot.exists()) {
           const currentTime = serverTimestamp();
 
-          if(!isAdmin){
+          if (!isAdmin) {
             await set(child(dbRef, 'odczytano'), true);
             console.log("Odczytano set to True")
             await set(child(dbRef, 'czasOdczytania'), currentTime);
@@ -95,14 +95,14 @@ export default function NextPage() {
         console.error('Error updating read status:', error);
       }
     };
-    
-    
+
+
 
     const fetchResponses = () => {
       const responsesRef = isAdmin
         ? ref(db, `notifications/${userId}/${notificationId}/odpowiedzi`)
         : ref(db, `notifications/${currentUserUid}/${notificationId}/odpowiedzi`);
-    
+
       onValue(responsesRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -131,7 +131,7 @@ export default function NextPage() {
         console.error('Błąd podczas pobierania daty wysłania powiadomienia:', error);
       }
     };
-    
+
 
     fetchNotificationContent();
     fetchNotificationTitle();
@@ -142,22 +142,22 @@ export default function NextPage() {
   }, [notificationId, isAdmin]);
 
   const handleSendResponse = async () => {
-    if (response != ''){
+    if (response != '') {
       try {
         const dbRef = isAdmin
           ? ref(db, `notifications/${userId}/${notificationId}/odpowiedzi`)
           : ref(db, `notifications/${currentUserUid}/${notificationId}/odpowiedzi`);
-    
+
         const responseObj = {
           tresc: response,
           data: serverTimestamp(),
           isAdmin: isAdmin
         };
-    
+
         await push(dbRef, responseObj);
         setResponse('');
         setErrorMessage('');
-    
+
         if (!isAdmin) {
           await update(ref(db, `notifications/${currentUserUid}/${notificationId}`), {
             nowaOdpowiedz: true
@@ -165,23 +165,24 @@ export default function NextPage() {
         }
         if (isAdmin) {
           await update(ref(db, `notifications/${userId}/${notificationId}`), {
-            odczytano: false
+            odczytano: false,
+            soft_deleted: false
           });
         }
       } catch (error) {
         console.error('Error saving response:', error);
       }
-    }else {
+    } else {
       setErrorMessage("Wprowadź treść odpowiedzi");
     }
   };
-  
-  
+
+
 
   const renderResponseItem = ({ item }) => {
     const isCurrentUser = userId === currentUserUid;
     const isAdminResponse = item.isAdmin;
-  
+
     return (
       <View style={[
         styles.responseItem,
@@ -196,45 +197,62 @@ export default function NextPage() {
   const navigationBack = async () => {
     return navigation.goBack();
   };
-  
+
+  const handleDeleteNotification = async () => {
+    try {
+      if (!isAdmin) {
+        await update(ref(db, `notifications/${currentUserUid}/${notificationId}`), {
+          soft_deleted: true
+        });
+      } else {
+        await set(ref(db, `notifications/${userId}/${notificationId}`), null);
+      }
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-    <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
-    <Drawer.Screen
-        options={{
-          title: notificationTitle,
-          headerShown: true,
-          headerLeft: () => (
-            <Pressable onPress={() => navigationBack()}>
-              <MaterialIcons name="arrow-back" size={24} color="black" style={{margin: 16}}/>
-            </Pressable>
-          ),
-        }}
-      />
-      <PageTitle style={{marginBottom: 10}}>{notificationTitle}</PageTitle>
-      <View style={styles.messageContainer}>
-      <Text style={styles.content}>{notificationContent}</Text>
-      <FlatList
-        data={responses}
-        renderItem={renderResponseItem}
-        keyExtractor={(item, index) => index.toString()}
-      />
-      <Text style={{marginBottom: 20}}>Otrzymano: {notificationDate}</Text>
+      <View style={Platform.OS === "web" ? styles.container : styles.containerOS}>
+        <Drawer.Screen
+          options={{
+            title: notificationTitle,
+            headerShown: true,
+            headerLeft: () => (
+              <Pressable onPress={() => navigationBack()}>
+                <MaterialIcons name="arrow-back" size={24} color="black" style={{ margin: 16 }} />
+              </Pressable>
+            ),
+          }}
+        />
+        <PageTitle style={{ marginBottom: 10 }}>{notificationTitle}</PageTitle>
+        <View style={styles.messageContainer}>
+          <Text style={styles.content}>{notificationContent}</Text>
+          <FlatList
+            data={responses}
+            renderItem={renderResponseItem}
+            keyExtractor={(item, index) => index.toString()}
+          />
+          <Text style={{ marginBottom: 20 }}>Otrzymano: {notificationDate}</Text>
+        </View>
+        <TextInput
+          style={styles.input}
+          onChangeText={setResponse}
+          value={response}
+          placeholder="Wpisz odpowiedź"
+          multiline={true}
+          numberOfLines={4}
+        />
+        <StyledButton onPress={handleSendResponse}>
+          <ButtonText>Wyślij</ButtonText>
+        </StyledButton>
+        <StyledButton onPress={handleDeleteNotification} style={styles.deleteButton}>
+          <ButtonText style={styles.deleteButtonText}>Usuń</ButtonText>
+        </StyledButton>
+        <MsgBox style={styles.errorMessage}>{errorMessage}</MsgBox>
       </View>
-      <TextInput
-        style={styles.input}
-        onChangeText={setResponse}
-        value={response}
-        placeholder="Wpisz odpowiedź"
-        multiline={true}
-        numberOfLines={4}
-      />
-      <StyledButton onPress={handleSendResponse}>
-        <ButtonText>Wyślij</ButtonText>
-      </StyledButton>
-      <MsgBox style={styles.errorMessage}>{errorMessage}</MsgBox>
-    </View>
     </ScrollView>
   );
 }
@@ -296,5 +314,12 @@ const styles = StyleSheet.create({
   errorMessage: {
     color: 'red',
     fontSize: 18,
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    marginTop: 10,
+  },
+  deleteButtonText: {
+    color: 'white',
   },
 });
