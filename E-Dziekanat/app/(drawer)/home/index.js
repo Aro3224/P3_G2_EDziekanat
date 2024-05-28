@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, Platform, Alert, TouchableOpacity, ScrollView, FlatList,Pressable } from 'react-native';
+import { Text, View, StyleSheet, Platform, Alert, TouchableOpacity, ScrollView, FlatList,Pressable, Button } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerToggleButton } from '@react-navigation/drawer';
 import { auth, db } from '../../../components/configs/firebase-config';
@@ -56,6 +56,7 @@ const fetchNotifications = async (isAdmin) => {
         notificationsData = notificationsArray;
       }
     }
+    notificationsData.sort((a, b) => new Date(b.czas) - new Date(a.czas));
 
     return notificationsData;
   } catch (error) {
@@ -75,6 +76,10 @@ export default function HomePage() {
   const [notifications, setNotifications] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [roleLoaded, setRoleLoaded] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginatedNotifications, setPaginatedNotifications] = useState([]);
+  const PAGE_SIZE = 10;
+
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -130,6 +135,30 @@ export default function HomePage() {
       unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    const paginateNotifications = () => {
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const end = start + PAGE_SIZE;
+      setPaginatedNotifications(notifications.slice(start, end));
+    };
+  
+    paginateNotifications();
+  }, [notifications, currentPage]);
+  
+
+  const handleNextPage = () => {
+    if (currentPage * PAGE_SIZE < notifications.length) {
+      setCurrentPage(prevPage => prevPage + 1);
+    }
+  };
+  
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prevPage => prevPage - 1);
+    }
+  };
+  
 
   const handleMobileToken = async (user) => {
     const permissionGranted = await requestUserPermission();
@@ -233,10 +262,17 @@ const renderNotificationItem = ({ item }) => {
       <View style={styles.upperPanel}>
           <Text style={styles.sectionTitle}>Nieodczytane Powiadomienia:</Text>
           <FlatList
-            data={notifications.sort()}
-            renderItem={renderNotificationItem}
-            keyExtractor={(item, index) => index.toString()}
-          />        
+  data={paginatedNotifications}
+  renderItem={renderNotificationItem}
+  keyExtractor={(item, index) => index.toString()}
+/>
+
+          <View style={styles.paginationContainer}>
+            <Button title="Poprzednia" onPress={handlePreviousPage} disabled={currentPage === 1} />
+              <Text style={styles.pageIndicator}>{currentPage}</Text>
+            <Button title="Następna" onPress={handleNextPage} disabled={currentPage * PAGE_SIZE >= notifications.length} />
+          </View>
+        
       </View>
     </View>
     </ScrollView>
@@ -293,4 +329,15 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     marginLeft: 5,
   },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  pageIndicator: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  
 });
