@@ -8,6 +8,7 @@ import { getAuth } from "firebase/auth";
 import { onValue, ref, get } from "firebase/database";
 import axios from 'axios';
 import { StyledButton, ButtonText, PageTitle } from '../../../components/styles';
+import { API_BASE_URL } from '../../../ipconfig';
 
 
 export default function UsersPage() {
@@ -58,7 +59,7 @@ export default function UsersPage() {
           text: 'Usuń',
           onPress: async () => {
             try {
-              const response = await axios.post('http://localhost:8000/api/delete-user/', {
+              const response = await axios.post(`http://${API_BASE_URL}/api/delete-user/`, {
                 UID: userId,
               },
               {
@@ -84,7 +85,7 @@ export default function UsersPage() {
     const confirmation = window.confirm('Czy na pewno chcesz usunąć tego użytkownika?');
     if (confirmation) {
     try {
-      const response = await axios.post('http://localhost:8000/api/delete-user/', {
+      const response = await axios.post(`http://${API_BASE_URL}/api/delete-user/`, {
         UID: userId,
       },
       {

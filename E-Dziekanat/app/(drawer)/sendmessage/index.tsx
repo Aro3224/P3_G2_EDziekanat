@@ -7,6 +7,7 @@ import { getAuth } from "firebase/auth";
 import { db, auth } from '../../../components/configs/firebase-config';
 import axios from 'axios';
 import { StyledButton, ButtonText, MsgBox, PageTitle, StyledInputLabel, StyledTextInput } from '../../../components/styles';
+import { API_BASE_URL } from '../../../ipconfig';
 
 interface Template {
   id: string;
@@ -157,7 +158,7 @@ export default function SendMessagePage() {
 
           //Save notification data in Firebase
           if (userData) {
-            const response = await axios.post('http://localhost:8000/api/save-data/', {
+            const response = await axios.post(`http://${API_BASE_URL}/api/save-data/`, {
               title: selectedTemplate?.title || messageTitle,
               message: message,
               UID: userId,
@@ -172,7 +173,7 @@ export default function SendMessagePage() {
 
           if (userData && userData.SendSMS == true) {
             // Send SMS as a fallback
-            const response = await axios.post('http://localhost:8000/api/send-sms/', {
+            const response = await axios.post(`http://${API_BASE_URL}/api/send-sms/`, {
               UID: userId,
               phoneNumber: userData.NrTelefonu,
               body: message,
@@ -186,7 +187,7 @@ export default function SendMessagePage() {
           }
           else if (userData && userData.mobtoken) {
             //Send push notification using Firebase
-            const response = await axios.post('http://localhost:8000/api/send-notification/', {
+            const response = await axios.post(`http://${API_BASE_URL}/api/send-notification/`, {
               registrationToken: userData.mobtoken,
               title: selectedTemplate?.title || messageTitle,
               message: message,
@@ -201,7 +202,7 @@ export default function SendMessagePage() {
           }
           if (userData && userData.webtoken) {
             //Send push notification using Firebase
-            const response = await axios.post('http://localhost:8000/api/send-notification/', {
+            const response = await axios.post(`http://${API_BASE_URL}/api/send-notification/`, {
               registrationToken: userData.webtoken,
               title: selectedTemplate?.title || messageTitle,
               message: message,

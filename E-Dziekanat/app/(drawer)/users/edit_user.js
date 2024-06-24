@@ -7,6 +7,7 @@ import { db, auth } from '../../../components/configs/firebase-config';
 import axios from 'axios';
 import { getAuth } from "firebase/auth";
 import { MsgBox, StyledButton, ButtonText, StyledTextInput, PageTitle, StyledInputLabel, SelectRoleButton, RoleList, Divider } from '../../../components/styles';
+import { API_BASE_URL } from '../../../ipconfig';
 
 
 export default function EditUserPage() {
@@ -90,7 +91,7 @@ export default function EditUserPage() {
             if (isPasswordEditable) {
                 if (textPasswordValue.length >= 6) {
                     try {
-                        const response = await axios.post('http://localhost:8000/api/edit-user/', {
+                        const response = await axios.post(`http://${API_BASE_URL}/api/edit-user/`, {
                             UID: userId,
                             email: textEmailValue,
                             password: textPasswordValue,
@@ -116,7 +117,7 @@ export default function EditUserPage() {
                 }
             } else {
                 try {
-                    const response = await axios.post('http://localhost:8000/api/edit-user/', {
+                    const response = await axios.post(`http://${API_BASE_URL}/api/edit-user/`, {
                         UID: userId,
                         email: textEmailValue,
                         Imie: textNameValue,
@@ -170,7 +171,7 @@ export default function EditUserPage() {
         const confirmation = window.confirm('Czy na pewno chcesz usunąć dane?');
         if (confirmation) {
         try {
-          const response = await axios.post('http://localhost:8000/api/delete-data/', {
+          const response = await axios.post(`http://${API_BASE_URL}/api/delete-data/`, {
             UID: userId,
           },
           {
@@ -200,7 +201,7 @@ export default function EditUserPage() {
               text: 'Usuń',
               onPress: async () => {
                 try {
-                  const response = await axios.post('http://localhost:8000/api/delete-data/', {
+                  const response = await axios.post(`http://${API_BASE_URL}/api/delete-data/`, {
                     UID: userId,
                   },
                   {

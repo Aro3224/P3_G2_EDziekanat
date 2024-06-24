@@ -6,6 +6,7 @@ import { getAuth} from "firebase/auth";
 import { ref, get } from "firebase/database";
 import axios from 'axios';
 import { MsgBox, StyledButton, ButtonText, StyledTextInput, PageTitle, StyledInputLabel, SelectRoleButton, RoleList, Divider } from '../../../components/styles';
+import { API_BASE_URL } from '../../../ipconfig';
 
 
 export default function AddUserPage() {
@@ -82,7 +83,7 @@ export default function AddUserPage() {
     }
 
     try {
-      const response = await axios.post('http://localhost:8000/api/create-user/', {
+      const response = await axios.post(`http://${API_BASE_URL}/api/create-user/`, {
         email: userEmail,
         password: userPass,
         Imie: userName,
