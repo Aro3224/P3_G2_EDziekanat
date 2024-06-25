@@ -1,7 +1,9 @@
 {
   "name": "e-dziekanat",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "expo-router/entry",
+  "author": "Adrian Ruchała, Karol Wolski, Arkadiusz Zwolenik",
+  "license": "MIT",
   "scripts": {
     "start": "concurrently \"npm run start:electron\" \"npm run start:expo\"",
     "start:expo": "cross-env REACT_NATIVE_ENV=expo-router/entry expo start",
@@ -9,7 +11,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "ts:check": "tsc"
+    "ts:check": "tsc",
+    "dist": "electron-builder"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.1.3",
@@ -46,8 +49,21 @@
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "electron": "^31.0.2",
+    "electron-builder": "^24.13.3",
     "typescript": "^5.1.3",
     "wait-on": "^7.2.0"
   },
-  "private": true
+  "private": true,
+  "build": {
+    "appId": "edziekanat.app",
+    "productName": "E-dziekanat",
+    "target": "NSIS",
+    "directories": {
+      "output": "build"
+    },
+    "nsis": {
+      "allowToChangeInstallationDirectory": true,
+      "oneClick": false
+    }
+  }
 }
