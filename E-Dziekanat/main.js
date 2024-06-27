@@ -24,7 +24,7 @@ app.whenReady().then(createWindow);
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
-    packageJson.main = 'main.js';
+    packageJson.main = 'mainToOpenBoth.js';
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
   }
 });

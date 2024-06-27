@@ -1,11 +1,11 @@
 {
   "name": "e-dziekanat",
   "version": "1.0.0",
-  "main": "expo-router/entry",
+  "main": "mainToOpenBoth.js",
   "author": "Adrian Ruchała, Karol Wolski, Arkadiusz Zwolenik",
   "license": "MIT",
   "scripts": {
-    "start": "concurrently \"npm run start:electron\" \"npm run start:expo\"",
+    "start": "concurrently \"npm run start:expo\" \"npm run start:electron\"",
     "start:expo": "cross-env REACT_NATIVE_ENV=expo-router/entry expo start",
     "start:electron": "electron .",
     "android": "expo start --android",
