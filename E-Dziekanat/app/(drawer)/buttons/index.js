@@ -25,16 +25,23 @@ export default function ButtonsPage() {
             const userEmailRef = ref(db, `/users/${button.userID}/email`);
             const userEmailSnapshot = await get(userEmailRef);
             const userEmail = userEmailSnapshot.val();
+            const userFirstnameRef = ref(db, `/users/${button.userID}/Imie`);
+            const userFirstnameSnapshot = await get(userFirstnameRef);
+            const userFirstname = userFirstnameSnapshot.val();
+            const userLastnameRef = ref(db, `/users/${button.userID}/Nazwisko`);
+            const userLastnameSnapshot = await get(userLastnameRef);
+            const userLastname = userLastnameSnapshot.val();
             console.log("UserID:", button.userID, "Email:", userEmail);
             return {
               id: key,
               email: userEmail,
+              name: userFirstname+" "+userLastname,
               ...button
             };
           } else {
             return {
               id: key,
-              email: button.userID,
+              name: button.userID,
               ...button
             };
           }
@@ -181,7 +188,7 @@ export default function ButtonsPage() {
             ) : (
               <>
                 <Text style={[styles.buttonID, selectedButton === button.id && styles.selectedText]}>Przycisk {button.id}</Text>
-                <Text style={[styles.buttonMember, selectedButton === button.id && styles.selectedText]}>{button.email === '' ? 'Nie przypisano' : button.email}</Text>
+                <Text style={[styles.buttonMember, selectedButton === button.id && styles.selectedText]}>{button.name === '' ? 'Nie przypisano' : button.name}</Text>
               </>
             )}
           </TouchableOpacity>
