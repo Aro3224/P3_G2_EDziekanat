@@ -169,7 +169,7 @@ export default function HistoryPage() {
           <View style={styles.notificationContent}>
             <Text style={styles.notificationTitle}>{item.tytul}</Text>
             {isAdmin && item.userData?.email && (
-              <Text>{item.userData.email}</Text>
+              <Text>{item.userData.Imie} {item.userData.Nazwisko}</Text>
             )}
           </View>
           <View style={styles.datesContainer}>
