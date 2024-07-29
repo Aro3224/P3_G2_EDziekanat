@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "e-dziekanat-4e60f",
+  "private_key_id": "a0c50e42bd0a8b712431a843c790d870ea8f0974",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDYBcF+CK1lR/D4\nPuy6fIqU5+aZfor7G2XUfy5FLcF5Fm+1fnQ/ETn3WGuJDzmy+P38VPxm4VC6209R\n8Ru3f6LqQETzEGFJiIK12/eS9/LhmG7yqMkPnM+ulb/NGNc1eh8f+uRLnM5ewQxB\nrTaGdd5pktxi61MJ/f+M4+9T8oeXqig54z6fOaUhb/ETAQ4MUjwTpZHJZIlI7nhp\n6Xl6mmFB3oVRbObS0P9lt0zoj9/wOr6HLorb8n0KDQZNTm2NosP6ckbZT8CahKdf\nxGWMCFvl5hz1LZ7ujjzrHwsrRHyTQEwrIZVyKs5q3X9oyrZ0Kvd+Akph8cuZNnaC\n5YUSGUXVAgMBAAECggEAAuOc0V8zVnnuVpuc1eepgNFTK7VeDXqx03Q5/bHddw2e\nQ9qjml5UHKNBmO0rs+GRoAjQ8V1NE5qwRmPHn54k4yYl5exPqMibGuyMtJn9VRgR\nT8yDF+LcgjS9gnQ1GKF//hEAcaRwvCKv08cJxiWYamgM64PDMgyEGPHJdyF0v8n/\n/RlDLOXM3dfGH9nd7W+v2mD15huDKd6M9aq3WoRPuoKI4mH7rjKrcHAFVRyHelH7\n/6cAIgqcFD8ibQDDk2AwTDbsnQSpRPdcw5IggUNz/8qz11TOvK3OCit2yd+Pjl+z\nPBie9y3zCZbfIG9Fg6OeMlEn44I8Goi8xImPmb6UlwKBgQD/DhNXIRCEI1ZlPovF\nVnJRwMqIpCeQsUSTuNsdtG074KDYhUCl4C7IdlVRbUmQK1Msk5rPHQVef2NetIUJ\nAcw79bn1w7RLoqYAdMOiwHAz7CYiGWhpujp1wofPB2JTItuio4WgiMDrc/Mmb24t\npiMh/sJMdITr9EpdeWYdqKPnYwKBgQDY0qg/psP+x0ulWX+3m9jSNWkxbm2FjRYn\nzetzN75hKRYhW55J8vgwemuKtB9wq8wrGkbV37ac53qUt9Y4jH2w78Wn/gPvKaEa\nmPaELZip4CKD1GzWI6rATWP9GbR5MYXtNB5+iQ4c7eNGVo/OyCaMpPhf3n5dcruG\noSHmqmQvZwKBgQC+KeFzofxteOdufy65CFYd7C9Vp4a0U+b8eOQuBps2/KkQJnHn\n+vkGj2vXVTN24UaXQso2x718EmCleNSDvapnvjNTMQIZLoC0cFp42yANJnHcFLOL\nuMTjjhGx4yCFOcUmQuNbqPql0oKk0ooEUQ16yDZXyLxeLHrRrLTdQiJKXwKBgQCi\nBOgMiEU1AR+Zs0MopKBkk9zDP00/2qmPnOQv+JueZuFOk/O4NoMXVqM9xlMoEnhC\nTSRZdQ40ORT0RFsjbngN213LppiyAl2MTnkHVDsb1Yx1Dis16PkTMcFhw++EEGmP\nUr7mtuuA2pJWYSCc2BtWRYADw3KRycYvWADJKNIsSQKBgQCi+K19xkL3+JjeDsPw\nz8YRO+7ztvLTN+BqjlWxIvdpcoz9nNCT+9VWFe7Y0wEGSgZj5+2QFB1XHpQqzAHA\nhL6s0cMVpjj328hn8DaggxoL1JQxKZAFAFkfMES7u0egjdU5a7/A6gpaVYnFU2JL\nXb3yzj2YXrePbeWkKzE8nXQWEg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "i2cbuttonscontroller@e-dziekanat-4e60f.iam.gserviceaccount.com",
+  "client_id": "108603771339075503112",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/i2cbuttonscontroller%40e-dziekanat-4e60f.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

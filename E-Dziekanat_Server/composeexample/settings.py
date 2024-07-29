@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 import firebase_admin
 from firebase_admin import credentials
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -139,3 +140,6 @@ cred = credentials.Certificate('e-dziekanat-4e60f-firebase-adminsdk-t7grn-01e397
 firebase_admin.initialize_app(cred, {
   'databaseURL': 'https://e-dziekanat-4e60f-default-rtdb.europe-west1.firebasedatabase.app/'
 })
+
+# Ścieżka do pliku z poświadczeniami serwisowymi
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'e-dziekanat-4e60f-a0c50e42bd0a.json')

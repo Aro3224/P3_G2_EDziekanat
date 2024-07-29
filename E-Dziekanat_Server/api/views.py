@@ -3,6 +3,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 import firebase_admin
 from firebase_admin import auth, messaging, db
 import time
@@ -10,6 +11,8 @@ import json
 import requests
 from pyfcm import FCMNotification
 from sinch import SinchClient
+from google.oauth2 import service_account
+from google.auth.transport.requests import Request
 
 
 @csrf_exempt
@@ -224,6 +227,16 @@ def save_data(request):
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+# Funkcja do uzyskania tokena dostępu
+def get_access_token():
+    creds = service_account.Credentials.from_service_account_file(
+        settings.FIREBASE_CREDENTIALS_PATH,
+        scopes=['https://www.googleapis.com/auth/firebase.messaging']
+    )
+    auth_request = Request()
+    creds.refresh(auth_request)
+    return creds.token
+
 @csrf_exempt
 def send_notification(request):
     if request.method == 'POST':
@@ -233,21 +246,39 @@ def send_notification(request):
         registration_token = data.get('registrationToken')
 
         if registration_token:
+            access_token = get_access_token()
+            url = "https://fcm.googleapis.com/v1/projects/e-dziekanat-4e60f/messages:send"
+            
+            headers = {
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json; charset=utf-8',
+            }
+            
+            payload = {
+                "message": {
+                    "token": registration_token,
+                    "notification": {
+                        "title": title,
+                        "body": message_body
+                    }
+                }
+            }
+            
             try:
-                push_service = FCMNotification(api_key="AAAAFrz_bZ0:APA91bH6oyJxF6tAzuTY3LIG193k4bITsnLsEZEFB0funtYs3oCfPF0JfRZlsNwN5mzy9b6QitIqaP757lcrrG3r56wWjrPRq1_F6SrzIqkr9uh1TEfkDm60PBbmBlA4rHHpuz7JEOUb")
-                result = push_service.notify_single_device(registration_id=registration_token, message_title=title, message_body=message_body)
+                response = requests.post(url, headers=headers, data=json.dumps(payload))
+                response_data = response.json()
 
-                if result['success'] == 1:
+                if response.status_code == 200:
                     return JsonResponse({'message': 'Push notification sent successfully', 'FCMToken': registration_token}, status=200)
                 else:
-                    return JsonResponse({'error': 'Failed to send push notification'}, status=500)
+                    return JsonResponse({'error': response_data.get('error', 'Failed to send push notification')}, status=500)
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)
         else:
             return JsonResponse({'error': 'Registration token not provided'}, status=400)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
-
+    
 @csrf_exempt
 def delete_data(request):
     if request.method == 'POST':
